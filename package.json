@@ -1,0 +1,9 @@
+{
+  "name": "metrics-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "npx serve . -p 5000",
+    "agentation": "npx -y agentation-mcp server"
+  }
+}
