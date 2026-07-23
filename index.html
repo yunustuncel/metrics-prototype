@@ -85,7 +85,8 @@
   .cat { color: var(--text-dim); }
   .src-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--text-mute); margin-left: 8px; vertical-align: middle; }
   .src-custom { color: var(--accent-text); border-color: var(--accent-border); }
-  .tagged { color: var(--green-text); display: inline-flex; align-items: center; gap: 4px; }
+  .tagged { color: var(--green-text); display: inline-flex; align-items: center; gap: 6px; }
+  .check-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--green); background: var(--green-bg); flex-shrink: 0; }
   .aggs { color: var(--text-dim); font-family: var(--mono); font-size: 11px; }
   input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
   .consumption { color: var(--text-dim); font-size: 11px; display: inline-flex; align-items: center; gap: 5px; }
@@ -253,7 +254,7 @@ function render(){
         <td class="cat dim">${m.cat}</td>
         <td class="dim" style="color:var(--text-dim)">${m.unit}</td>
         <td class="aggs dim">${m.agg}</td>
-        <td class="dim">${m.tag ? '<span class="tagged">'+svg.check+' Supported</span>' : '<span style="color:var(--text-mute)">—</span>'}</td>
+        <td class="dim">${m.tag ? '<span class="tagged"><span class="check-badge">'+svg.check+'</span> Supported</span>' : '<span style="color:var(--text-mute)">—</span>'}</td>
         <td class="dim"><span class="consumption"><span class="bar"><span style="width:${m.use}%"></span></span> ${m.use>60?'High':m.use>30?'Med':'Low'}</span></td>
       </tr>`;
     }).join('');
