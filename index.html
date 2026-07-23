@@ -85,6 +85,9 @@
   .cat { color: var(--text-dim); }
   .src-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--text-mute); margin-left: 8px; vertical-align: middle; }
   .src-custom { color: var(--accent-text); border-color: var(--accent-border); }
+  .type-chip { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid; }
+  .type-rec { background: var(--accent-bg); color: var(--accent-text); border-color: var(--accent-border); }
+  .type-custom { background: #2b1f0e; color: #e8a44a; border-color: #5a3a10; }
   .tagged { color: var(--green-text); display: inline-flex; align-items: center; gap: 6px; }
   .check-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--green); background: var(--green-bg); flex-shrink: 0; }
   .aggs { color: var(--text-dim); font-family: var(--mono); font-size: 11px; }
@@ -247,10 +250,11 @@ function render(){
     const rows = vf.map((m) => {
       const gi = s.metrics.indexOf(m);
       const isSel = s.sel.has(gi);
-      const tag = m.source==='custom' ? '<span class="src-tag src-custom">Custom</span>' : '';
+      const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '';
       return `<tr class="${m.on?'':'disabled'} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
         <td style="width:34px"><input type="checkbox" ${m.on?'checked':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
-        <td class="mname dim">${m.m}${tag}</td>
+        <td class="mname dim">${m.m}</td>
+        <td class="dim">${typeChip}</td>
         <td class="cat dim">${m.cat}</td>
         <td class="dim" style="color:var(--text-dim)">${m.unit}</td>
         <td class="aggs dim">${m.agg}</td>
@@ -271,13 +275,9 @@ function render(){
         <div class="metrics-toolbar">
           <input type="checkbox" ${allSelected?'checked':''} onchange="selectAll('${s.id}', this.checked)" aria-label="Select all">
           <span class="sel-count">${selCount} selected</span>
-          <button class="sm" ${selCount?'':'disabled'} onclick="bulk('${s.id}',true)">Enable</button>
-          <button class="sm" ${selCount?'':'disabled'} onclick="bulk('${s.id}',false)">Disable</button>
-          <button class="sm danger" ${removable?'':'disabled'} onclick="removeSel('${s.id}')" title="${removable?'Remove selected custom metrics':'Only custom metrics can be removed'}">${svg.trash} Remove</button>
-          <span class="selhint">${selCount? (removable?'':'Selection includes recommended metrics — these can be disabled but not removed') : 'Click rows to select'}</span>
         </div>
         <table class="inner-tbl">
-          <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
+          <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         <div class="foot"><span>50 rows per page</span><span>Page 1 of 1</span></div>`
