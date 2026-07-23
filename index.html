@@ -250,7 +250,7 @@ const known = ['instance/cpu/utilization','instance/cpu/reserved_cores','instanc
 function visibleMetrics(s){
   return s.metrics.filter(m => {
     if(m.source==='custom') return true;
-    if(m.source==='rec') return s.recOn;
+    if(m.source==='rec') return true;
     if(m.source==='disc') return s.autoOn;
     return true;
   });
@@ -272,8 +272,10 @@ function render(){
       const gi = s.metrics.indexOf(m);
       const isSel = s.sel.has(gi);
       const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '';
-      return `<tr class="${m.on?'':'disabled'} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
-        <td style="width:34px"><input type="checkbox" ${m.on?'checked':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
+      const recLocked = m.source==='rec' && s.recOn;
+      const effectiveOn = recLocked ? true : m.on;
+      return `<tr class="${effectiveOn?'':'disabled'} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
+        <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
         <td class="mname dim">${m.m}</td>
         <td class="dim">${typeChip}</td>
         <td class="cat dim">${m.cat}</td>
@@ -351,7 +353,7 @@ function removeSel(id){
   s.sel.clear(); saveState(); render(); showToast(toRemove.length+' custom metric'+(toRemove.length!==1?'s':'')+' removed');
 }
 
-function toggleRec(id){ const s=services.find(x=>x.id===id); s.recOn=!s.recOn; s.sel.clear(); if(!s.open) s.open=true; saveState(); render(); }
+function toggleRec(id){ const s=services.find(x=>x.id===id); s.recOn=!s.recOn; s.metrics.forEach(m=>{ if(m.source==='rec') m.on=s.recOn; }); s.sel.clear(); if(!s.open) s.open=true; saveState(); render(); }
 function toggleAuto(id){ const s=services.find(x=>x.id===id); s.autoOn=!s.autoOn; s.sel.clear(); if(s.autoOn && !s.open) s.open=true; saveState(); render(); }
 
 function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ document.getElementById('mNs').value=id; } onNsChange(); }
