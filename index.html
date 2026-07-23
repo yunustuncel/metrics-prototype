@@ -139,6 +139,7 @@
     <input class="filter-input" id="filterInput" placeholder="Filter by name, category, entity type…" autocomplete="off">
   </div>
   <button><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export JSON</button>
+  <button onclick="resetState()" title="Clear saved changes and restore defaults"><svg class="i" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg> Reset</button>
   <button class="primary" onclick="openModal(null)"><svg class="i" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add metric</button>
 </div>
 
@@ -199,7 +200,25 @@ const svg = {
   x: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
 };
 
-const services = [
+const STORAGE_KEY = 'metrics-prototype-state';
+
+function saveState() {
+  const data = services.map(s => ({
+    ...s,
+    sel: [...s.sel]
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadState(defaults) {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return defaults;
+    return JSON.parse(saved).map(s => ({ ...s, sel: new Set(s.sel) }));
+  } catch { return defaults; }
+}
+
+const defaultServices = [
   { id:'ce', name:'Compute Engine', ns:'compute.googleapis.com', open:true, recOn:true, autoOn:false, sel:new Set(), metrics:[
     { m:'instance/cpu/utilization', cat:'CPU', unit:'ratio', agg:'ALIGN_MEAN +2', tag:true, on:true, use:80, source:'rec' },
     { m:'instance/cpu/reserved_cores', cat:'CPU', unit:'1', agg:'ALIGN_MEAN, ALIGN_MAX', tag:true, on:true, use:35, source:'rec' },
@@ -222,6 +241,8 @@ const services = [
     { m:'database/disk/read_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:6, source:'disc' },
   ]}
 ];
+
+const services = loadState(defaultServices);
 
 let filters = [];
 const known = ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'];
@@ -316,22 +337,22 @@ document.getElementById('filterInput').addEventListener('keydown', e => {
   if(e.key==='Backspace' && !e.target.value && filters.length){ filters.pop(); render(); }
 });
 
-function toggleService(id){ const s=services.find(x=>x.id===id); s.open=!s.open; render(); }
-function toggleMetric(id,gi){ const s=services.find(x=>x.id===id); s.metrics[gi].on=!s.metrics[gi].on; render(); }
+function toggleService(id){ const s=services.find(x=>x.id===id); s.open=!s.open; saveState(); render(); }
+function toggleMetric(id,gi){ const s=services.find(x=>x.id===id); s.metrics[gi].on=!s.metrics[gi].on; saveState(); render(); }
 
 // row selection (highlight)
 function rowClick(e,id,gi){ const s=services.find(x=>x.id===id); if(s.sel.has(gi)) s.sel.delete(gi); else s.sel.add(gi); render(); }
 function selectAll(id,val){ const s=services.find(x=>x.id===id); s.sel.clear(); if(val){ visibleFiltered(s).forEach(m=>s.sel.add(s.metrics.indexOf(m))); } render(); }
-function bulk(id,val){ const s=services.find(x=>x.id===id); [...s.sel].forEach(gi=>{ s.metrics[gi].on=val; }); render(); }
+function bulk(id,val){ const s=services.find(x=>x.id===id); [...s.sel].forEach(gi=>{ s.metrics[gi].on=val; }); saveState(); render(); }
 function removeSel(id){
   const s=services.find(x=>x.id===id);
   const toRemove=[...s.sel].filter(gi=>s.metrics[gi].source==='custom').map(gi=>s.metrics[gi]);
   s.metrics = s.metrics.filter(m=>!toRemove.includes(m));
-  s.sel.clear(); render(); showToast(toRemove.length+' custom metric'+(toRemove.length!==1?'s':'')+' removed');
+  s.sel.clear(); saveState(); render(); showToast(toRemove.length+' custom metric'+(toRemove.length!==1?'s':'')+' removed');
 }
 
-function toggleRec(id){ const s=services.find(x=>x.id===id); s.recOn=!s.recOn; s.sel.clear(); if(!s.open) s.open=true; render(); }
-function toggleAuto(id){ const s=services.find(x=>x.id===id); s.autoOn=!s.autoOn; s.sel.clear(); if(s.autoOn && !s.open) s.open=true; render(); }
+function toggleRec(id){ const s=services.find(x=>x.id===id); s.recOn=!s.recOn; s.sel.clear(); if(!s.open) s.open=true; saveState(); render(); }
+function toggleAuto(id){ const s=services.find(x=>x.id===id); s.autoOn=!s.autoOn; s.sel.clear(); if(s.autoOn && !s.open) s.open=true; saveState(); render(); }
 
 function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ document.getElementById('mNs').value=id; } onNsChange(); }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
@@ -386,8 +407,9 @@ function submitMetric(){
     if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
   } else { s=services.find(x=>x.id===sel.value); }
   s.metrics.push({ m:name, cat:'—', unit:'—', agg:'ALIGN_MEAN', tag:false, on:true, use:5, source:'custom' });
-  s.open=true; closeModal(); render(); showToast('Custom metric added to ' + s.name);
+  s.open=true; closeModal(); saveState(); render(); showToast('Custom metric added to ' + s.name);
 }
+function resetState(){ if(confirm('Reset to defaults? All changes will be lost.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
 function showToast(msg){
   const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg;
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2400);
