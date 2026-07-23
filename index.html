@@ -40,7 +40,9 @@
   .outer { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--panel); }
   table.outer-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .outer-tbl col.c-svc { width: auto; } .outer-tbl col.c-mon { width: 110px; } .outer-tbl col.c-cus { width: 90px; }
-  .outer-tbl col.c-rec { width: 170px; } .outer-tbl col.c-auto { width: 170px; }
+  .outer-tbl col.c-mode { width: 180px; }
+  .mode-select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; width: 100%; }
+  .mode-select:focus { border-color: var(--accent); }
   .outer-tbl thead th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; padding: 13px 15px; border-bottom: 1px solid var(--border); background: var(--panel-2); vertical-align: middle; }
   .outer-tbl thead th.center { text-align: center; }
 
@@ -53,7 +55,7 @@
   .chevron.open { transform: rotate(90deg); }
   .svc-name { font-weight: 500; font-size: 14px; } .svc-ns { color: var(--text-mute); font-size: 11px; font-family: var(--mono); }
   .badge { padding: 2px 9px; border-radius: 20px; font-size: 12px; }
-  .badge.accent { background: var(--accent-bg); color: var(--accent-text); } .badge.off { background: var(--panel-2); color: var(--text-mute); }
+  .badge.accent { background: var(--accent-bg); color: var(--accent-text); } .badge.off { background: var(--panel-2); color: var(--text); }
 
   .ctrl { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 12px; justify-content: center; }
   .toggle { position: relative; width: 34px; height: 19px; border-radius: 11px; background: var(--border-strong); border: none; cursor: pointer; padding: 0; transition: background .15s; flex-shrink: 0; }
@@ -87,7 +89,7 @@
   .src-custom { color: var(--accent-text); border-color: var(--accent-border); }
   .type-chip { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid; }
   .type-rec { background: var(--accent-bg); color: var(--accent-text); border-color: var(--accent-border); }
-  .type-custom { background: #2b1f0e; color: #e8a44a; border-color: #5a3a10; }
+  .type-custom { background: var(--panel-2); color: var(--text-dim); border-color: var(--border-strong); }
   .tagged { color: var(--green-text); display: inline-flex; align-items: center; gap: 6px; }
   .check-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--green); background: var(--green-bg); flex-shrink: 0; }
   .aggs { color: var(--text-dim); font-family: var(--mono); font-size: 11px; }
@@ -145,9 +147,9 @@
 
 <div class="outer">
   <table class="outer-tbl">
-    <colgroup><col class="c-svc"><col class="c-mon"><col class="c-cus"><col class="c-rec"><col class="c-auto"></colgroup>
+    <colgroup><col class="c-svc"><col class="c-mon"><col class="c-cus"><col class="c-mode"></colgroup>
     <thead><tr>
-      <th>Service</th><th class="center">Monitored</th><th class="center">Custom</th><th class="center">Recommended set</th><th class="center">Autodiscovery</th>
+      <th>Service</th><th class="center">Monitored</th><th class="center">Custom</th><th>Mode</th>
     </tr></thead>
     <tbody id="services"></tbody>
   </table>
@@ -324,11 +326,14 @@ function render(){
       </td>
       <td style="text-align:center"><span class="badge ${monCount?'accent':'off'}">${monCount}</span></td>
       <td style="text-align:center">${customCount?`<span class="badge off">${customCount}</span>`:'<span style="color:var(--text-mute)">—</span>'}</td>
-      <td><div class="ctrl" onclick="event.stopPropagation()"><button class="toggle ${s.recOn?'on':''}" onclick="toggleRec('${s.id}')" aria-label="Recommended set"><span class="knob"></span></button><span>${s.recOn?'On':'Off'}</span></div></td>
-      <td><div class="ctrl" onclick="event.stopPropagation()"><button class="toggle ${s.autoOn?'on':''}" onclick="toggleAuto('${s.id}')" aria-label="Autodiscovery"><span class="knob"></span></button><span>${s.autoOn?'On':'Off'}</span></div></td>
+      <td onclick="event.stopPropagation()"><select class="mode-select" onchange="setMode('${s.id}', this.value)">
+        <option value="rec" ${!s.autoOn && s.recOn?'selected':''}>Recommended</option>
+        <option value="auto" ${s.autoOn?'selected':''}>Autodiscovery</option>
+        <option value="manual" ${!s.autoOn && !s.recOn?'selected':''}>Manual</option>
+      </select></td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
-      <td colspan="5"><div class="detail-inset">${body}</div></td>
+      <td colspan="4"><div class="detail-inset">${body}</div></td>
     </tr>`;
   }).join('');
   renderFilterChips();
@@ -361,8 +366,16 @@ function removeSel(id){
   s.sel.clear(); saveState(); render(); showToast(toRemove.length+' custom metric'+(toRemove.length!==1?'s':'')+' removed');
 }
 
-function toggleRec(id){ const s=services.find(x=>x.id===id); s.recOn=!s.recOn; s.metrics.forEach(m=>{ if(m.source==='rec') m.on=s.recOn; }); s.sel.clear(); if(!s.open) s.open=true; saveState(); render(); }
-function toggleAuto(id){ const s=services.find(x=>x.id===id); s.autoOn=!s.autoOn; s.sel.clear(); if(s.autoOn && !s.open) s.open=true; saveState(); render(); }
+function setMode(id, mode) {
+  const s = services.find(x => x.id === id);
+  s.recOn = mode === 'rec';
+  s.autoOn = mode === 'auto';
+  s.metrics.forEach(m => { if(m.source === 'rec') m.on = s.recOn; });
+  s.sel.clear();
+  if (!s.open) s.open = true;
+  saveState();
+  render();
+}
 
 function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ document.getElementById('mNs').value=id; } onNsChange(); }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
