@@ -281,7 +281,8 @@ function render(){
       const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '';
       const recLocked = m.source==='rec' && s.recOn;
       const effectiveOn = recLocked ? true : m.on;
-      return `<tr class="${effectiveOn?'':'disabled'} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
+      const rowDisabled = m.source !== 'rec' && !m.on;
+      return `<tr class="${rowDisabled?'disabled':''} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
         <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
         <td class="mname dim">${m.m}</td>
         <td class="dim">${typeChip}</td>
