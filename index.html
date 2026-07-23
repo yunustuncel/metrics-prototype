@@ -214,7 +214,14 @@ function loadState(defaults) {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return defaults;
-    return JSON.parse(saved).map(s => ({ ...s, sel: new Set(s.sel) }));
+    return JSON.parse(saved).map(s => ({
+      ...s,
+      sel: new Set(s.sel),
+      metrics: s.metrics.map(m => ({
+        ...m,
+        on: m.source === 'rec' ? s.recOn : m.on
+      }))
+    }));
   } catch { return defaults; }
 }
 
@@ -340,7 +347,7 @@ document.getElementById('filterInput').addEventListener('keydown', e => {
 });
 
 function toggleService(id){ const s=services.find(x=>x.id===id); s.open=!s.open; saveState(); render(); }
-function toggleMetric(id,gi){ const s=services.find(x=>x.id===id); s.metrics[gi].on=!s.metrics[gi].on; saveState(); render(); }
+function toggleMetric(id,gi){ const s=services.find(x=>x.id===id); if(s.metrics[gi].source==='rec' && s.recOn) return; s.metrics[gi].on=!s.metrics[gi].on; saveState(); render(); }
 
 // row selection (highlight)
 function rowClick(e,id,gi){ const s=services.find(x=>x.id===id); if(s.sel.has(gi)) s.sel.delete(gi); else s.sel.add(gi); render(); }
