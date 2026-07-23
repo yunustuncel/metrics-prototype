@@ -39,7 +39,7 @@
 
   .outer { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--panel); }
   table.outer-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .outer-tbl col.c-svc { width: auto; } .outer-tbl col.c-mon { width: 110px; } .outer-tbl col.c-cus { width: 90px; }
+  .outer-tbl col.c-svc { width: 320px; } .outer-tbl col.c-mon { width: 110px; } .outer-tbl col.c-cus { width: 90px; }
   .outer-tbl col.c-mode { width: 180px; }
   .mode-select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; width: 100%; }
   .mode-select:focus { border-color: var(--accent); }
@@ -147,9 +147,9 @@
 
 <div class="outer">
   <table class="outer-tbl">
-    <colgroup><col class="c-svc"><col class="c-mon"><col class="c-cus"><col class="c-mode"></colgroup>
+    <colgroup><col class="c-svc"><col class="c-mode"><col class="c-mon"><col class="c-cus"></colgroup>
     <thead><tr>
-      <th>Service</th><th class="center">Monitored</th><th class="center">Custom</th><th>Mode</th>
+      <th>Service</th><th>Metric collection mode</th><th class="center">Monitored</th><th class="center">Custom</th>
     </tr></thead>
     <tbody id="services"></tbody>
   </table>
@@ -239,6 +239,9 @@ const defaultServices = [
     { m:'instance/memory/balloon', cat:'Memory', unit:'By', agg:'ALIGN_MEAN', tag:true, on:false, use:20, source:'disc' },
     { m:'instance/disk/operation_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:15, source:'disc' },
     { m:'firewall/dropped_bytes_count', cat:'Network', unit:'By', agg:'ALIGN_RATE', tag:false, on:false, use:8, source:'disc' },
+    { m:'instance/integrity_monitoring/late_boot_report_count', cat:'Security', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:5, source:'avail' },
+    { m:'instance/guest_visible_vcpus', cat:'CPU', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:10, source:'avail' },
+    { m:'instance/network/packet_loss', cat:'Network', unit:'ratio', agg:'ALIGN_MEAN', tag:false, on:false, use:7, source:'avail' },
   ]},
   { id:'sql', name:'Cloud SQL', ns:'cloudsql.googleapis.com', open:false, recOn:true, autoOn:false, sel:new Set(), metrics:[
     { m:'database/cpu/utilization', cat:'CPU', unit:'ratio', agg:'ALIGN_MEAN', tag:true, on:true, use:70, source:'rec' },
@@ -248,6 +251,8 @@ const defaultServices = [
     { m:'database/uptime', cat:'Uptime', unit:'s', agg:'ALIGN_SUM', tag:true, on:true, use:9, source:'rec' },
     { m:'database/replication/lag', cat:'Replication', unit:'s', agg:'ALIGN_MEAN', tag:false, on:false, use:11, source:'disc' },
     { m:'database/disk/read_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:6, source:'disc' },
+    { m:'database/postgresql/num_backends', cat:'Connections', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:14, source:'avail' },
+    { m:'database/auto_failover/request_count', cat:'Availability', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:4, source:'avail' },
   ]}
 ];
 
@@ -280,7 +285,7 @@ function render(){
     const rows = vf.map((m) => {
       const gi = s.metrics.indexOf(m);
       const isSel = s.sel.has(gi);
-      const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '';
+      const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '<span style="color:var(--text-mute)">—</span>';
       const recLocked = m.source==='rec' && s.recOn;
       const effectiveOn = recLocked ? true : m.on;
       const rowDisabled = m.source !== 'rec' && !m.on;
@@ -324,13 +329,13 @@ function render(){
           <div><div class="svc-name">${s.name}</div><div class="svc-ns">${s.ns}</div></div>
         </div>
       </td>
-      <td style="text-align:center"><span class="badge ${monCount?'accent':'off'}">${monCount}</span></td>
-      <td style="text-align:center">${customCount?`<span class="badge off">${customCount}</span>`:'<span style="color:var(--text-mute)">—</span>'}</td>
       <td onclick="event.stopPropagation()"><select class="mode-select" onchange="setMode('${s.id}', this.value)">
         <option value="rec" ${!s.autoOn && s.recOn?'selected':''}>Recommended</option>
         <option value="auto" ${s.autoOn?'selected':''}>Autodiscovery</option>
         <option value="manual" ${!s.autoOn && !s.recOn?'selected':''}>Manual</option>
       </select></td>
+      <td style="text-align:center"><span class="badge ${monCount?'accent':'off'}">${monCount}</span></td>
+      <td style="text-align:center">${customCount?`<span class="badge off">${customCount}</span>`:'<span style="color:var(--text-mute)">—</span>'}</td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
       <td colspan="4"><div class="detail-inset">${body}</div></td>
