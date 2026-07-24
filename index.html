@@ -216,14 +216,14 @@ function loadState(defaults) {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return defaults;
-    return JSON.parse(saved).map(s => ({
-      ...s,
-      sel: new Set(s.sel),
-      metrics: s.metrics.map(m => ({
-        ...m,
-        on: m.source === 'rec' ? s.recOn : m.on
-      }))
-    }));
+    return JSON.parse(saved).map(s => {
+      const base = { ...s, sel: new Set(s.sel), metrics: s.metrics.map(m => ({ ...m, on: m.source === 'rec' ? s.recOn : m.on })) };
+      const def = defaults.find(d => d.id === s.id);
+      if (!def) return base;
+      const savedNames = new Set(s.metrics.map(m => m.m));
+      const newMetrics = def.metrics.filter(m => !savedNames.has(m.m));
+      return { ...base, metrics: [...base.metrics, ...newMetrics] };
+    });
   } catch { return defaults; }
 }
 
@@ -323,10 +323,10 @@ function render(){
 
     const body = vis.length ? `
         ${banner}
-        ${!s.autoOn ? `<div class="metrics-toolbar">
+        <div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
           <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
-        </div>` : ''}
+        </div>
         <table class="inner-tbl">
           <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -348,7 +348,7 @@ function render(){
         <option value="manual" ${!s.autoOn && !s.recOn?'selected':''}>Manual</option>
       </select></td>
       <td style="text-align:center">${s.autoOn ? '<span class="badge accent">All</span>' : `<span class="badge ${monCount?'accent':'off'}">${monCount}</span>`}</td>
-      <td style="text-align:center">${customCount?`<span class="badge off">${customCount}</span>`:'<span style="color:var(--text-mute)">—</span>'}</td>
+      <td style="text-align:center"><span class="badge off">${customCount}</span></td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
       <td colspan="4"><div class="detail-inset">${body}</div></td>
