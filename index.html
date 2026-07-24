@@ -242,6 +242,9 @@ const defaultServices = [
     { m:'instance/integrity_monitoring/late_boot_report_count', cat:'Security', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:5, source:'avail' },
     { m:'instance/guest_visible_vcpus', cat:'CPU', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:10, source:'avail' },
     { m:'instance/network/packet_loss', cat:'Network', unit:'ratio', agg:'ALIGN_MEAN', tag:false, on:false, use:7, source:'avail' },
+    { m:'instance/cpu/scheduler_wait_time', cat:'CPU', unit:'ns', agg:'ALIGN_MEAN', tag:false, on:false, use:18, source:'avail' },
+    { m:'instance/disk/throttled_bps', cat:'Disk', unit:'By/s', agg:'ALIGN_MEAN', tag:false, on:false, use:9, source:'avail' },
+    { m:'instance/memory/page_fault_count', cat:'Memory', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:14, source:'avail' },
   ]},
   { id:'sql', name:'Cloud SQL', ns:'cloudsql.googleapis.com', open:false, recOn:true, autoOn:false, sel:new Set(), metrics:[
     { m:'database/cpu/utilization', cat:'CPU', unit:'ratio', agg:'ALIGN_MEAN', tag:true, on:true, use:70, source:'rec' },
@@ -253,6 +256,9 @@ const defaultServices = [
     { m:'database/disk/read_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:6, source:'disc' },
     { m:'database/postgresql/num_backends', cat:'Connections', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:14, source:'avail' },
     { m:'database/auto_failover/request_count', cat:'Availability', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:4, source:'avail' },
+    { m:'database/disk/write_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:22, source:'avail' },
+    { m:'database/memory/quota', cat:'Memory', unit:'By', agg:'ALIGN_MEAN', tag:false, on:false, use:31, source:'avail' },
+    { m:'database/network/received_bytes_count', cat:'Network', unit:'By', agg:'ALIGN_RATE', tag:false, on:false, use:17, source:'avail' },
   ]}
 ];
 
@@ -319,7 +325,7 @@ function render(){
         ${banner}
         ${!s.autoOn ? `<div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
-          <button class="add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
+          <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
         </div>` : ''}
         <table class="inner-tbl">
           <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
