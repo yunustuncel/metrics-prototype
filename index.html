@@ -123,6 +123,7 @@
   .link-box .lb-title { color: var(--text-dim); margin-bottom: 6px; }
   .link-box .ent { color: var(--accent-text); font-family: var(--mono); font-size: 12px; }
   .link-box .lbls { color: var(--text-mute); font-family: var(--mono); font-size: 11px; margin-top: 2px; }
+  .tag-enrich-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--green-text); font-size: 12px; }
   .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
   .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--green-bg); border: 1px solid #1f5a44; color: var(--green-text); padding: 10px 16px; border-radius: var(--radius); font-size: 13px; opacity: 0; pointer-events: none; transition: all .2s; z-index: 60; display: flex; align-items: center; gap: 8px; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -162,15 +163,13 @@
     </div>
     <div class="modal-body">
       <div class="field"><label>Namespace <span class="req">*</span></label>
-        <select id="mNs" onchange="onNsChange()">
-          <option value="__custom">+ Add custom namespace</option>
-          <option value="ce" selected>compute.googleapis.com</option>
-          <option value="sql">cloudsql.googleapis.com</option>
-          <option value="storage">storage.googleapis.com</option>
-          <option value="pubsub">pubsub.googleapis.com</option>
-        </select>
-        <input type="text" id="mNsCustom" placeholder="e.g. mycompany.custom.googleapis.com" style="display:none; margin-top:8px;">
-        <div class="ns-back" id="mNsBack" style="display:none;" onclick="cancelCustomNs()"><svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px;"><polyline points="15 18 9 12 15 6"/></svg> Back to list</div>
+        <input type="text" id="mNs" list="mNsList" placeholder="e.g. compute.googleapis.com" autocomplete="off">
+        <datalist id="mNsList">
+          <option value="compute.googleapis.com">
+          <option value="cloudsql.googleapis.com">
+          <option value="storage.googleapis.com">
+          <option value="pubsub.googleapis.com">
+        </datalist>
       </div>
       <div class="field"><label>Metric name <span class="req">*</span></label>
         <input type="text" id="mName" placeholder="Start typing to search available metrics…" autocomplete="off">
@@ -311,10 +310,10 @@ function render(){
 
     const body = vis.length ? `
         ${banner}
-        <div class="metrics-toolbar">
+        ${!s.autoOn ? `<div class="metrics-toolbar">
           <input type="checkbox" ${allSelected?'checked':''} onchange="selectAll('${s.id}', this.checked)" aria-label="Select all">
           <span class="sel-count">${selCount} selected</span>
-        </div>
+        </div>` : ''}
         <table class="inner-tbl">
           <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -383,7 +382,7 @@ function setMode(id, mode) {
   render();
 }
 
-function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ document.getElementById('mNs').value=id; } onNsChange(); }
+function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; } updateLinking(); }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
 function resetModal(){
   document.getElementById('mName').value='';
@@ -391,16 +390,7 @@ function resetModal(){
   document.getElementById('mHint').className='hint';
   document.getElementById('mSuggest').style.display='none';
   document.getElementById('mLabels').value='';
-  document.getElementById('mNs').value='ce'; cancelCustomNs(); updateLinking();
-}
-function onNsChange(){
-  const sel=document.getElementById('mNs'), custom=document.getElementById('mNsCustom'), back=document.getElementById('mNsBack');
-  if(sel.value==='__custom'){ sel.style.display='none'; custom.style.display='block'; back.style.display='inline-flex'; custom.focus(); }
-}
-function cancelCustomNs(){
-  const sel=document.getElementById('mNs'), custom=document.getElementById('mNsCustom'), back=document.getElementById('mNsBack');
-  sel.style.display='block'; custom.style.display='none'; back.style.display='none'; custom.value='';
-  if(sel.value==='__custom') sel.value='ce';
+  document.getElementById('mNs').value='compute.googleapis.com'; updateLinking();
 }
 const mName = document.getElementById('mName');
 mName.addEventListener('input', ()=>{
@@ -423,18 +413,16 @@ function pickMetric(m){
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
-  lc.style.color='var(--text)'; lc.innerHTML='<div class="ent">GCP::Compute::Instance</div><div class="lbls">project_id, instance_id</div>';
+  lc.style.color='var(--text)';
+  lc.innerHTML='<div class="ent">GCP::Compute::Instance</div><div class="lbls">project_id, instance_id</div><div class="tag-enrich-row"><span class="check-badge">'+svg.check+'</span><span>Tag enrichment supported</span></div>';
 }
 function submitMetric(){
   const name=mName.value.trim();
   if(!name){ document.getElementById('mHint').innerHTML='Enter a metric name to continue.'; document.getElementById('mHint').className='hint warn'; return; }
-  const sel=document.getElementById('mNs'), customNs=document.getElementById('mNsCustom');
-  let s;
-  if(customNs.style.display!=='none'){
-    const nsName=customNs.value.trim(); if(!nsName){ customNs.focus(); return; }
-    s=services.find(x=>x.ns===nsName);
-    if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
-  } else { s=services.find(x=>x.id===sel.value); }
+  const nsName=document.getElementById('mNs').value.trim();
+  if(!nsName){ document.getElementById('mNs').focus(); return; }
+  let s=services.find(x=>x.ns===nsName);
+  if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
   s.metrics.push({ m:name, cat:'—', unit:'—', agg:'ALIGN_MEAN', tag:false, on:true, use:5, source:'custom' });
   s.open=true; closeModal(); saveState(); render(); showToast('Custom metric added to ' + s.name);
 }
