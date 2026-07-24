@@ -73,6 +73,9 @@
 
   .metrics-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-bottom: 1px solid var(--border); }
   .metrics-toolbar .add-btn { margin-left: auto; font-size: 12px; padding: 5px 10px; border-color: var(--border); }
+  .tf-group { display: flex; flex-direction: column; gap: 2px; }
+  .tf-group label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.4px; }
+  .tf-group select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; }
   .sel-count { color: var(--text-dim); font-size: 12px; margin-right: 4px; }
 
   table.inner-tbl { width: 100%; border-collapse: collapse; }
@@ -178,7 +181,7 @@
         <div class="hint" id="mHint">Search the validated list, or enter a custom name — we'll verify it exists.</div>
       </div>
       <div class="field"><label>Aggregations <span class="req">*</span></label>
-        <select><option>Select an option</option><option>ALIGN_MEAN</option><option>ALIGN_MAX</option><option>ALIGN_RATE</option><option>ALIGN_SUM</option></select>
+        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE">
       </div>
       <div class="field"><label>Labels (dimensions) <span class="req">*</span></label>
         <select id="mLabels" onchange="updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
@@ -265,6 +268,8 @@ const defaultServices = [
 const services = loadState(defaultServices);
 
 let filters = [];
+const typeFilters = {};
+function setTypeFilter(id, val) { typeFilters[id] = val; render(); }
 const known = ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'];
 const knownByNs = {
   'compute.googleapis.com': ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'],
@@ -282,7 +287,15 @@ function visibleMetrics(s){
     return true;
   });
 }
-function visibleFiltered(s){ return visibleMetrics(s).filter(passFilter); }
+function visibleFiltered(s){
+  const tf = typeFilters[s.id] || 'all';
+  return visibleMetrics(s).filter(m => {
+    if(!passFilter(m)) return false;
+    if(tf === 'rec') return m.source === 'rec';
+    if(tf === 'custom') return m.source === 'custom';
+    return true;
+  });
+}
 
 function render(){
   const root = document.getElementById('services');
@@ -325,6 +338,14 @@ function render(){
         ${banner}
         <div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
+          <div class="tf-group" onclick="event.stopPropagation()">
+            <label>Metric type</label>
+            <select onchange="setTypeFilter('${s.id}', this.value)">
+              <option value="all" ${(typeFilters[s.id]||'all')==='all'?'selected':''}>All</option>
+              <option value="rec" ${typeFilters[s.id]==='rec'?'selected':''}>Recommended</option>
+              <option value="custom" ${typeFilters[s.id]==='custom'?'selected':''}>Custom</option>
+            </select>
+          </div>
           <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
         </div>
         <table class="inner-tbl">
@@ -403,6 +424,7 @@ function resetModal(){
   document.getElementById('mHint').className='hint';
   document.getElementById('mSuggest').style.display='none';
   document.getElementById('mLabels').value='';
+  document.getElementById('mAgg').value='';
   document.getElementById('mNs').value='compute.googleapis.com'; updateLinking();
 }
 const mName = document.getElementById('mName');
