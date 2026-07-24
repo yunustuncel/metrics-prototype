@@ -265,7 +265,7 @@ function visibleMetrics(s){
   return s.metrics.filter(m => {
     if(m.source==='custom') return true;
     if(m.source==='rec') return true;
-    if(m.source==='disc') return s.autoOn;
+    if(m.source==='disc') return false;
     return true;
   });
 }
@@ -306,7 +306,7 @@ function render(){
     const allSelected = vf.length>0 && vf.every(m=>s.sel.has(s.metrics.indexOf(m)));
     const removable = selCount>0 && selArr.every(gi => s.metrics[gi].source==='custom');
 
-    const banner = s.autoOn ? `<div class="auto-banner">${svg.radar}<div><strong>Autodiscovery is on.</strong> ${discCount} additional metric${discCount!==1?'s':''} discovered in this namespace ${discCount!==1?'are':'is'} shown below alongside the recommended set. Enable the ones you want to monitor.</div></div>` : '';
+    const banner = s.autoOn ? `<div class="auto-banner">${svg.radar}<div><strong>Autodiscovery is on.</strong> All metrics discovered will be ingested.</div></div>` : '';
 
     const body = vis.length ? `
         ${banner}
