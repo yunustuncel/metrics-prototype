@@ -39,7 +39,7 @@
 
   .outer { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--panel); }
   table.outer-tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .outer-tbl col.c-svc { width: 320px; } .outer-tbl col.c-mon { width: 110px; } .outer-tbl col.c-cus { width: 90px; }
+  .outer-tbl col.c-svc { width: 320px; } .outer-tbl col.c-mon { width: 80px; } .outer-tbl col.c-cus { width: 70px; }
   .outer-tbl col.c-mode { width: 90px; }
   .mode-select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; width: 100%; }
   .th-with-info { display: inline-flex; align-items: center; gap: 5px; }
@@ -339,7 +339,7 @@ function render(){
       return `<tr class="${rowDisabled?'disabled':''} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
         <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
         <td class="mname dim">${m.m}</td>
-        <td class="dim">${typeChip}</td>
+        <td>${typeChip}</td>
         <td class="cat dim">${m.cat}</td>
         <td class="dim" style="color:var(--text-dim)">${m.unit}</td>
         <td class="aggs dim">${m.agg}</td>
@@ -371,7 +371,7 @@ function render(){
           <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
         </div>
         <table class="inner-tbl">
-          <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th>Consumption</th></tr></thead>
+          <thead><tr><th style="width:34px"></th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th><span class="th-with-info">Ingest activity<span class="info-btn" title="Ingest activity over the last day" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></span></span></th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
         <div class="foot"><span>50 rows per page</span><span>Page 1 of 1</span></div>`
@@ -395,7 +395,7 @@ function render(){
       <td style="text-align:center"><span class="badge off">${customCount}</span></td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
-      <td colspan="4"><div class="detail-inset">${body}</div></td>
+      <td colspan="5"><div class="detail-inset">${body}</div></td>
     </tr>`;
   }).join('');
   renderFilterChips();
