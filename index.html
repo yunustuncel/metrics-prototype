@@ -42,6 +42,16 @@
   .outer-tbl col.c-svc { width: 320px; } .outer-tbl col.c-mon { width: 110px; } .outer-tbl col.c-cus { width: 90px; }
   .outer-tbl col.c-mode { width: 90px; }
   .mode-select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; width: 100%; }
+  .th-with-info { display: inline-flex; align-items: center; gap: 5px; }
+  .info-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--text-mute); display: inline-flex; align-items: center; line-height: 1; }
+  .info-btn:hover { color: var(--text-dim); background: none; }
+  .info-btn svg { width: 13px; height: 13px; }
+  .info-popover { position: absolute; z-index: 200; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px 16px; width: 310px; box-shadow: 0 8px 24px rgba(0,0,0,.45); font-size: 12px; line-height: 1.6; }
+  .info-popover h4 { margin: 0 0 10px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .info-popover .mode-row { margin-bottom: 10px; }
+  .info-popover .mode-row:last-child { margin-bottom: 0; }
+  .info-popover .mode-name { font-weight: 600; color: var(--accent-text); margin-bottom: 2px; }
+  .info-popover .mode-desc { color: var(--text-dim); }
   .mode-select:focus { border-color: var(--accent); }
   .outer-tbl thead th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; padding: 13px 15px; border-bottom: 1px solid var(--border); background: var(--panel-2); vertical-align: middle; }
   .outer-tbl thead th.center { text-align: center; }
@@ -154,7 +164,14 @@
   <table class="outer-tbl">
     <colgroup><col class="c-svc"><col class="c-mode"><col class="c-mon"><col class="c-cus"></colgroup>
     <thead><tr>
-      <th>Service</th><th>Metric collection mode</th><th class="center">Monitored</th><th class="center">Custom</th>
+      <th>Service</th><th style="position:relative"><span class="th-with-info">Metric collection mode<button class="info-btn" onclick="toggleModeInfo(event)" aria-label="Mode info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></button></span>
+        <div class="info-popover" id="modeInfoPopover" style="display:none;top:36px;left:0;">
+          <h4>Metric collection modes</h4>
+          <div class="mode-row"><div class="mode-name">Curated</div><div class="mode-desc">Starts with a hand-picked set of high-value metrics. You can enable or disable individual metrics, and add custom ones on top.</div></div>
+          <div class="mode-row"><div class="mode-name">Autodiscovery</div><div class="mode-desc">Automatically ingests all metrics discovered for this service. Useful when you want full coverage without manual selection.</div></div>
+          <div class="mode-row"><div class="mode-name">Manual</div><div class="mode-desc">No metrics are pre-selected. You have full control — enable exactly the metrics you need and add custom ones as required.</div></div>
+        </div>
+      </th><th class="center">Monitored</th><th class="center">Custom</th>
     </tr></thead>
     <tbody id="services"></tbody>
   </table>
@@ -472,6 +489,12 @@ function showToast(msg){
   const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg;
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2400);
 }
+function toggleModeInfo(e) {
+  e.stopPropagation();
+  const p = document.getElementById('modeInfoPopover');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', () => { const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none'; });
 render();
 </script>
 
