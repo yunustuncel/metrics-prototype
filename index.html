@@ -412,8 +412,8 @@ function render(){
         <option value="auto" ${s.autoOn?'selected':''}>Autodiscovery</option>
         <option value="manual" ${!s.autoOn && !s.recOn?'selected':''}>Manual</option>
       </select></td>
-      <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n green">${recEnabled}</span><span class="sep">/</span><span class="total">${recTotal}</span></span>`}</td>
-      <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n blue">${availEnabled}</span><span class="sep">/</span><span class="total">${availTotal}</span></span>`}</td>
+      <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${recEnabled}</span><span class="sep">/</span><span class="total">${recTotal}</span></span>`}</td>
+      <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${availEnabled}</span><span class="sep">/</span><span class="total">${availTotal}</span></span>`}</td>
       <td style="text-align:center"><span class="metric-count"><span class="n grey">${customEnabled}</span><span class="sep">/</span><span class="total">${customTotal}</span></span></td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
