@@ -91,6 +91,19 @@
 
   .metrics-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-bottom: 1px solid var(--border); }
   .metrics-toolbar .add-btn { margin-left: auto; font-size: 12px; padding: 5px 10px; border-color: var(--border); }
+  .inner-filter-wrap { flex: 1; position: relative; }
+  .inner-filter { width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); color: var(--text); outline: none; box-sizing: border-box; }
+  .inner-filter:focus { border-color: var(--accent); }
+  .inner-filter::placeholder { color: var(--text-mute); }
+  .filter-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,.4); z-index: 200; padding: 8px; }
+  .filter-suggestions .sug-label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .filter-suggestions .sug-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .filter-suggestions .sug-chips:last-child { margin-bottom: 0; }
+  .sug-chip { font-size: 11px; padding: 2px 9px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text-dim); cursor: pointer; }
+  .sug-chip:hover { border-color: var(--accent); color: var(--text); background: var(--accent-bg); }
+  .sug-chip.type-rec-sug { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
+  .sug-chip.type-avail-sug { border-color: var(--accent-border); color: var(--accent-text); background: var(--accent-bg); }
+  .sug-chip.type-custom-sug { border-color: var(--border-strong); color: var(--text-dim); background: var(--panel-2); }
   .tf-group { display: flex; flex-direction: column; gap: 2px; }
   .tf-group label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.4px; }
   .tf-group select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; }
@@ -168,10 +181,13 @@
 <div class="step"><span class="num">2</span><span class="title">Select observability options</span></div>
 
 <div class="toolbar">
-  <div class="filterbar" onclick="document.getElementById('filterInput').focus()">
-    <svg class="i" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    <span id="filterChips"></span>
-    <input class="filter-input" id="filterInput" placeholder="Filter by name, category, entity type…" autocomplete="off">
+  <div style="position:relative;flex:1">
+    <div class="filterbar" onclick="document.getElementById('filterInput').focus()">
+      <svg class="i" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span id="filterChips"></span>
+      <input class="filter-input" id="filterInput" placeholder="Filter services by name, category, type…" autocomplete="off" onfocus="showOuterSug()" onblur="setTimeout(hideOuterSug,150)">
+    </div>
+    <div class="filter-suggestions" id="outerSug" style="display:none"></div>
   </div>
   <button><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export JSON</button>
   <button onclick="resetState()" title="Clear saved changes and restore defaults"><svg class="i" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg> Reset</button>
@@ -303,8 +319,8 @@ const defaultServices = [
 const services = loadState(defaultServices);
 
 let filters = [];
-const typeFilters = {};
-function setTypeFilter(id, val) { typeFilters[id] = val; render(); }
+const metricFilters = {};
+function setMetricFilter(id, val) { metricFilters[id] = val; render(); }
 const known = ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'];
 const knownByNs = {
   'compute.googleapis.com': ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'],
@@ -323,15 +339,18 @@ function visibleMetrics(s){
   });
 }
 const sourceOrder = { rec: 0, custom: 1, avail: 2, disc: 3 };
+function passMetricFilter(m, raw) {
+  if (!raw) return true;
+  const v = raw.trim().toLowerCase();
+  if (v === 'recommended') return m.source === 'rec';
+  if (v === 'available') return m.source === 'avail';
+  if (v === 'custom') return m.source === 'custom';
+  return m.m.toLowerCase().includes(v) || m.cat.toLowerCase().includes(v);
+}
 function visibleFiltered(s){
-  const tf = typeFilters[s.id] || 'all';
-  return visibleMetrics(s).filter(m => {
-    if(!passFilter(m)) return false;
-    if(tf === 'rec') return m.source === 'rec';
-    if(tf === 'avail') return m.source === 'avail';
-    if(tf === 'custom') return m.source === 'custom';
-    return true;
-  }).sort((a,b) => (sourceOrder[a.source]??9) - (sourceOrder[b.source]??9));
+  const mf = metricFilters[s.id] || '';
+  return visibleMetrics(s).filter(m => passFilter(m) && passMetricFilter(m, mf))
+    .sort((a,b) => (sourceOrder[a.source]??9) - (sourceOrder[b.source]??9));
 }
 
 function render(){
@@ -381,14 +400,13 @@ function render(){
         ${banner}
         <div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
-          <div class="tf-group" onclick="event.stopPropagation()">
-            <label>Metric type</label>
-            <select onchange="setTypeFilter('${s.id}', this.value)">
-              <option value="all" ${(typeFilters[s.id]||'all')==='all'?'selected':''}>All</option>
-              <option value="rec" ${typeFilters[s.id]==='rec'?'selected':''}>Recommended</option>
-              <option value="avail" ${typeFilters[s.id]==='avail'?'selected':''}>Available</option>
-              <option value="custom" ${typeFilters[s.id]==='custom'?'selected':''}>Custom</option>
-            </select>
+          <div class="inner-filter-wrap" onclick="event.stopPropagation()">
+            <input class="inner-filter" id="mf-${s.id}" placeholder="Filter metrics…" autocomplete="off"
+              value="${(metricFilters[s.id]||'')}"
+              oninput="setMetricFilter('${s.id}',this.value)"
+              onfocus="showInnerSug('${s.id}')"
+              onblur="setTimeout(()=>hideInnerSug('${s.id}'),150)">
+            <div class="filter-suggestions" id="mfsug-${s.id}" style="display:none"></div>
           </div>
           <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
         </div>
@@ -425,7 +443,13 @@ function render(){
 
 function passFilter(m){
   if(!filters.length) return true;
-  return filters.every(f => { const v=f.toLowerCase(); return m.m.toLowerCase().includes(v) || m.cat.toLowerCase().includes(v); });
+  return filters.every(f => {
+    const v = f.toLowerCase();
+    if(v === 'recommended') return m.source === 'rec';
+    if(v === 'available') return m.source === 'avail';
+    if(v === 'custom') return m.source === 'custom';
+    return m.m.toLowerCase().includes(v) || m.cat.toLowerCase().includes(v);
+  });
 }
 function renderFilterChips(){
   document.getElementById('filterChips').innerHTML = filters.map((f,i)=>`<span class="chip">${f}<span class="x" onclick="removeFilter(${i})">${svg.x}</span></span>`).join('');
@@ -551,6 +575,59 @@ function editMetric(svcId, gi) {
   if (newName.trim()) { m.m = newName.trim(); saveState(); render(); }
 }
 document.addEventListener('click', closeKebab);
+
+// ── Inner filter suggestions ──────────────────────────────────────────────
+function showInnerSug(id) {
+  const s = services.find(x => x.id === id);
+  const box = document.getElementById('mfsug-' + id);
+  if (!box) return;
+  const cats = [...new Set(visibleMetrics(s).map(m => m.cat).filter(c => c !== '—'))];
+  box.innerHTML = `
+    <div class="sug-label">Type</div>
+    <div class="sug-chips">
+      <span class="sug-chip type-rec-sug" onmousedown="pickInnerSug('${id}','Recommended')">Recommended</span>
+      <span class="sug-chip type-avail-sug" onmousedown="pickInnerSug('${id}','Available')">Available</span>
+      <span class="sug-chip type-custom-sug" onmousedown="pickInnerSug('${id}','Custom')">Custom</span>
+    </div>
+    ${cats.length ? `<div class="sug-label">Category</div><div class="sug-chips">${cats.map(c=>`<span class="sug-chip" onmousedown="pickInnerSug('${id}','${c}')">${c}</span>`).join('')}</div>` : ''}`;
+  box.style.display = 'block';
+}
+function hideInnerSug(id) {
+  const box = document.getElementById('mfsug-' + id);
+  if (box) box.style.display = 'none';
+}
+function pickInnerSug(id, val) {
+  metricFilters[id] = val;
+  render();
+}
+
+// ── Outer filter suggestions ──────────────────────────────────────────────
+function showOuterSug() {
+  const box = document.getElementById('outerSug');
+  if (!box) return;
+  const cats = [...new Set(services.flatMap(s => s.metrics.map(m => m.cat)).filter(c => c !== '—'))];
+  const nss = services.map(s => s.name);
+  box.innerHTML = `
+    <div class="sug-label">Metric type</div>
+    <div class="sug-chips">
+      <span class="sug-chip type-rec-sug" onmousedown="pickOuterSug('Recommended')">Recommended</span>
+      <span class="sug-chip type-avail-sug" onmousedown="pickOuterSug('Available')">Available</span>
+      <span class="sug-chip type-custom-sug" onmousedown="pickOuterSug('Custom')">Custom</span>
+    </div>
+    <div class="sug-label">Category</div>
+    <div class="sug-chips">${cats.map(c=>`<span class="sug-chip" onmousedown="pickOuterSug('${c}')">${c}</span>`).join('')}</div>
+    <div class="sug-label">Service</div>
+    <div class="sug-chips">${nss.map(n=>`<span class="sug-chip" onmousedown="pickOuterSug('${n}')">${n}</span>`).join('')}</div>`;
+  box.style.display = 'block';
+}
+function hideOuterSug() {
+  const box = document.getElementById('outerSug');
+  if (box) box.style.display = 'none';
+}
+function pickOuterSug(val) {
+  filters.push(val); render();
+  const inp = document.getElementById('filterInput'); if (inp) inp.value = '';
+}
 
 function toggleModeInfo(e) {
   e.stopPropagation();
