@@ -120,7 +120,7 @@
   table.inner-tbl tbody tr:hover { background: var(--row-hover); }
   table.inner-tbl tbody tr.selected { background: var(--row-sel); }
   table.inner-tbl tbody tr.selected:hover { background: #26325a; }
-  table.inner-tbl tbody tr.disabled td.dim { opacity: .42; }
+  table.inner-tbl tbody tr.disabled td.dim { opacity: 1; }
   .mname { font-family: var(--mono); font-size: 12px; color: var(--text); }
   .cat { color: var(--text-dim); }
   .src-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--text-mute); margin-left: 8px; vertical-align: middle; }
@@ -248,6 +248,7 @@
 </div>
 
 <div class="toast" id="toast"><svg class="i" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg">Metric added</span></div>
+<div id="fp" class="fp" style="display:none"></div>
 
 <script>
 const svg = {
@@ -716,8 +717,6 @@ render();
 document.getElementById('fp').addEventListener('mousedown', e => e.preventDefault());
 document.getElementById('fp').addEventListener('click',     e => e.stopPropagation());
 </script>
-
-<div id="fp" class="fp" style="display:none"></div>
 
 <script type="module">
   import React from 'https://esm.sh/react@18';
