@@ -710,6 +710,11 @@ function toggleModeInfo(e) {
 }
 document.addEventListener('click', () => { const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none'; });
 render();
+
+// Prevent blur when clicking inside the filter panel (keeps input focused through key→op→value flow)
+// Stop click propagation so the document click handler doesn't close the panel mid-selection
+document.getElementById('fp').addEventListener('mousedown', e => e.preventDefault());
+document.getElementById('fp').addEventListener('click',     e => e.stopPropagation());
 </script>
 
 <div id="fp" class="fp" style="display:none"></div>
