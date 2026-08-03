@@ -91,22 +91,25 @@
 
   .metrics-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-bottom: 1px solid var(--border); }
   .metrics-toolbar .add-btn { margin-left: auto; font-size: 12px; padding: 5px 10px; border-color: var(--border); }
-  .inner-filter-wrap { flex: 1; position: relative; }
-  .inner-filter { width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 10px; font-size: 12px; font-family: var(--sans); color: var(--text); outline: none; box-sizing: border-box; }
-  .inner-filter:focus { border-color: var(--accent); }
-  .inner-filter::placeholder { color: var(--text-mute); }
-  .filter-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,.4); z-index: 200; padding: 8px; }
-  .filter-suggestions .sug-label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-  .filter-suggestions .sug-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
-  .filter-suggestions .sug-chips:last-child { margin-bottom: 0; }
-  .sug-chip { font-size: 11px; padding: 2px 9px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text-dim); cursor: pointer; }
-  .sug-chip:hover { border-color: var(--accent); color: var(--text); background: var(--accent-bg); }
-  .sug-chip.type-rec-sug { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
-  .sug-chip.type-avail-sug { border-color: var(--accent-border); color: var(--accent-text); background: var(--accent-bg); }
-  .sug-chip.type-custom-sug { border-color: var(--border-strong); color: var(--text-dim); background: var(--panel-2); }
-  .tf-group { display: flex; flex-direction: column; gap: 2px; }
-  .tf-group label { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.4px; }
-  .tf-group select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; font-size: 12px; font-family: var(--sans); cursor: pointer; outline: none; }
+  .inner-filterbar { flex:1; display:flex; align-items:center; gap:5px; flex-wrap:wrap; border:1px solid var(--border); border-radius:var(--radius); padding:4px 8px; min-height:32px; background:var(--panel-2); cursor:text; position:relative; }
+  .inner-filterbar:focus-within { border-color:var(--accent); }
+  .inner-filterbar input { background:transparent; border:none; color:var(--text); outline:none; font-size:12px; font-family:var(--sans); min-width:80px; flex:1; }
+  .inner-filterbar input::placeholder { color:var(--text-mute); }
+  .fp { position:fixed; z-index:500; background:var(--panel); border:1px solid var(--border-strong); border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,.55); width:340px; overflow:hidden; }
+  .fp-breadcrumb { display:flex; align-items:center; gap:6px; padding:8px 14px; background:var(--panel-2); border-bottom:1px solid var(--border); font-size:12px; color:var(--text-dim); }
+  .fp-breadcrumb .fp-bc-seg { color:var(--accent-text); font-weight:500; }
+  .fp-breadcrumb .fp-bc-sep { color:var(--text-mute); }
+  .fp-section { font-size:10px; color:var(--text-mute); text-transform:uppercase; letter-spacing:.5px; padding:8px 14px 4px; }
+  .fp-item { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; font-size:13px; color:var(--text); }
+  .fp-item:hover { background:var(--row-hover); }
+  .fp-item.fp-active { background:var(--row-hover); }
+  .fp-icon { width:32px; height:18px; background:var(--panel-2); border:1px solid var(--border-strong); border-radius:3px; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:var(--text-mute); font-family:var(--mono); font-weight:700; flex-shrink:0; }
+  .fp-hint { margin-left:auto; color:var(--text-mute); font-size:11px; }
+  .fp-sep { border:none; border-top:1px solid var(--border); margin:3px 0; }
+  .fp-phrase { display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--text-dim); font-size:12px; cursor:pointer; }
+  .fp-phrase:hover { background:var(--row-hover); }
+  .fp-kbd { display:flex; gap:14px; padding:6px 14px; border-top:1px solid var(--border); background:var(--panel-2); font-size:10px; color:var(--text-mute); }
+  .fp-kbd kbd { background:var(--panel-2); border:1px solid var(--border-strong); border-radius:3px; padding:1px 5px; font-family:var(--mono); font-size:9px; margin-right:3px; }
   .sel-count { color: var(--text-dim); font-size: 12px; margin-right: 4px; }
 
   table.inner-tbl { width: 100%; border-collapse: collapse; }
@@ -185,9 +188,8 @@
     <div class="filterbar" onclick="document.getElementById('filterInput').focus()">
       <svg class="i" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
       <span id="filterChips"></span>
-      <input class="filter-input" id="filterInput" placeholder="Filter services by name, category, type…" autocomplete="off" onfocus="showOuterSug()" onblur="setTimeout(hideOuterSug,150)">
+      <input class="filter-input" id="filterInput" placeholder="Filter by name, category, type…" autocomplete="off">
     </div>
-    <div class="filter-suggestions" id="outerSug" style="display:none"></div>
   </div>
   <button><svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export JSON</button>
   <button onclick="resetState()" title="Clear saved changes and restore defaults"><svg class="i" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg> Reset</button>
@@ -318,9 +320,8 @@ const defaultServices = [
 
 const services = loadState(defaultServices);
 
-let filters = [];
-const metricFilters = {};
-function setMetricFilter(id, val) { metricFilters[id] = val; render(); }
+let filters = []; // outer: array of {key,op,value} or plain strings
+const metricFilters = {}; // inner: {svcId: [{key,op,value}|string]}
 const known = ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'];
 const knownByNs = {
   'compute.googleapis.com': ['instance/cpu/utilization','instance/cpu/reserved_cores','instance/disk/read_bytes_count','instance/disk/write_bytes_count','instance/network/received_bytes','instance/network/sent_bytes','instance/uptime','instance/memory/balloon','instance/disk/operation_count','firewall/dropped_bytes_count'],
@@ -328,6 +329,33 @@ const knownByNs = {
   'storage.googleapis.com': ['storage/object_count','storage/total_bytes','storage/api/request_count','storage/bucket/object_count','storage/bucket/total_bytes'],
   'pubsub.googleapis.com': ['topic/send_message_operation_count','subscription/pull_request_count','subscription/num_undelivered_messages','topic/byte_cost','subscription/oldest_unacked_message_age'],
 };
+
+// Filter key definitions
+const FK = [
+  { key:'type',            label:'Metric type',      hint:'Type',     values:()=>['Recommended','Available','Custom'] },
+  { key:'category',        label:'Category',         hint:'Category', values:(sid)=>[...new Set(mPool(sid).map(m=>m.cat).filter(c=>c!=='—'))] },
+  { key:'unit',            label:'Unit',             hint:'Unit',     values:(sid)=>[...new Set(mPool(sid).map(m=>m.unit).filter(u=>u!=='—'))] },
+  { key:'aggregations',    label:'Aggregations',     hint:'Agg',      values:()=>['ALIGN_MEAN','ALIGN_MAX','ALIGN_RATE','ALIGN_SUM','ALIGN_DELTA'] },
+  { key:'tag enrichment',  label:'Tag enrichment',   hint:'Tag',      values:()=>['Supported','Not supported'] },
+  { key:'ingest activity', label:'Ingest activity',  hint:'Ingest',   values:()=>['High','Med','Low'] },
+];
+function mPool(sid){ return sid ? (services.find(x=>x.id===sid)?.metrics||[]) : services.flatMap(s=>s.metrics); }
+
+function evalFilter(f, m){
+  if(typeof f==='string'){ const v=f.toLowerCase(); return m.m.toLowerCase().includes(v)||m.cat.toLowerCase().includes(v); }
+  const {key,op,value} = f;
+  let match = false;
+  if(key==='type')            match = m.source===(value==='Recommended'?'rec':value==='Available'?'avail':'custom');
+  else if(key==='category')   match = m.cat===value;
+  else if(key==='unit')       match = m.unit===value;
+  else if(key==='aggregations') match = m.agg.includes(value);
+  else if(key==='tag enrichment') match = value==='Supported'?m.tag:!m.tag;
+  else if(key==='ingest activity'){ const lv=m.use>60?'High':m.use>30?'Med':'Low'; match=lv===value; }
+  return op==='='?match:!match;
+}
+function filterLabel(f){ return typeof f==='string'?f:`${f.key} ${f.op} ${f.value}`; }
+function passFilter(m){ return !filters.length || filters.every(f=>evalFilter(f,m)); }
+function passMetricFilter(m, arr){ return !arr||!arr.length || arr.every(f=>evalFilter(f,m)); }
 
 function visibleMetrics(s){
   return s.metrics.filter(m => {
@@ -339,16 +367,8 @@ function visibleMetrics(s){
   });
 }
 const sourceOrder = { rec: 0, custom: 1, avail: 2, disc: 3 };
-function passMetricFilter(m, raw) {
-  if (!raw) return true;
-  const v = raw.trim().toLowerCase();
-  if (v === 'recommended') return m.source === 'rec';
-  if (v === 'available') return m.source === 'avail';
-  if (v === 'custom') return m.source === 'custom';
-  return m.m.toLowerCase().includes(v) || m.cat.toLowerCase().includes(v);
-}
 function visibleFiltered(s){
-  const mf = metricFilters[s.id] || '';
+  const mf = metricFilters[s.id] || [];
   return visibleMetrics(s).filter(m => passFilter(m) && passMetricFilter(m, mf))
     .sort((a,b) => (sourceOrder[a.source]??9) - (sourceOrder[b.source]??9));
 }
@@ -396,17 +416,19 @@ function render(){
 
     const banner = s.autoOn ? `<div class="auto-banner">${svg.radar}<div><strong>Autodiscovery is on.</strong> All metrics discovered will be ingested.</div></div>` : '';
 
+    const mfArr = metricFilters[s.id] || [];
+    const mfChipHtml = mfArr.map((f,i)=>`<span class="chip">${filterLabel(f)}<span class="x" onclick="event.stopPropagation();removeMetricFilter('${s.id}',${i})">${svg.x}</span></span>`).join('');
     const body = vis.length ? `
         ${banner}
         <div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
-          <div class="inner-filter-wrap" onclick="event.stopPropagation()">
-            <input class="inner-filter" id="mf-${s.id}" placeholder="Filter metrics…" autocomplete="off"
-              value="${(metricFilters[s.id]||'')}"
-              oninput="setMetricFilter('${s.id}',this.value)"
-              onfocus="showInnerSug('${s.id}')"
-              onblur="setTimeout(()=>hideInnerSug('${s.id}'),150)">
-            <div class="filter-suggestions" id="mfsug-${s.id}" style="display:none"></div>
+          <div class="inner-filterbar" onclick="event.stopPropagation()">
+            ${mfChipHtml}
+            <input id="mf-${s.id}" placeholder="${mfArr.length?'':'Filter metrics…'}" autocomplete="off"
+              onfocus="fpOpen(event,'inner','${s.id}')"
+              onblur="fpBlur()"
+              oninput="fpInput(this.value)"
+              onkeydown="fpKeydown(event,'inner','${s.id}')">
           </div>
           <button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>
         </div>
@@ -441,24 +463,125 @@ function render(){
   renderFilterChips();
 }
 
-function passFilter(m){
-  if(!filters.length) return true;
-  return filters.every(f => {
-    const v = f.toLowerCase();
-    if(v === 'recommended') return m.source === 'rec';
-    if(v === 'available') return m.source === 'avail';
-    if(v === 'custom') return m.source === 'custom';
-    return m.m.toLowerCase().includes(v) || m.cat.toLowerCase().includes(v);
-  });
-}
 function renderFilterChips(){
-  document.getElementById('filterChips').innerHTML = filters.map((f,i)=>`<span class="chip">${f}<span class="x" onclick="removeFilter(${i})">${svg.x}</span></span>`).join('');
+  document.getElementById('filterChips').innerHTML = filters.map((f,i)=>`<span class="chip">${filterLabel(f)}<span class="x" onclick="removeFilter(${i})">${svg.x}</span></span>`).join('');
 }
 function removeFilter(i){ filters.splice(i,1); render(); }
-document.getElementById('filterInput').addEventListener('keydown', e => {
-  if(e.key==='Enter' && e.target.value.trim()){ filters.push(e.target.value.trim()); e.target.value=''; render(); }
-  if(e.key==='Backspace' && !e.target.value && filters.length){ filters.pop(); render(); }
-});
+function removeMetricFilter(sid,i){ const arr=metricFilters[sid]||[]; arr.splice(i,1); metricFilters[sid]=arr; render(); }
+
+// ── Filter Panel (shared for outer + inner) ─────────────────────────────────
+let fpCtx = null; // { type:'outer'|'inner', svcId, step:'key'|'op'|'value', pendingKey, pendingOp, inputEl }
+let fpBlurTimer = null;
+
+function fpOpen(e, type, svcId){
+  clearTimeout(fpBlurTimer);
+  const inp = e.target;
+  fpCtx = { type, svcId: svcId||null, step:'key', pendingKey:null, pendingOp:null, inputEl:inp };
+  fpRender(inp.value);
+  fpPosition(inp);
+}
+function fpBlur(){
+  fpBlurTimer = setTimeout(()=>{ fpClose(); }, 200);
+}
+function fpInput(val){
+  if(!fpCtx) return;
+  if(fpCtx.step==='key') fpRender(val);
+}
+function fpKeydown(e, type, svcId){
+  if(!fpCtx){ fpOpen(e, type, svcId); }
+  if(e.key==='Escape'){ fpClose(); e.target.blur(); return; }
+  if(e.key==='Enter' && fpCtx && fpCtx.step==='key'){
+    const val = e.target.value.trim();
+    if(val){ fpAddFilter(val); e.target.value=''; }
+  }
+  if(e.key==='Backspace' && !e.target.value){
+    const arr = fpCtx.type==='outer' ? filters : (metricFilters[fpCtx.svcId]||[]);
+    if(arr.length){ arr.pop(); if(fpCtx.type==='outer') filters=arr; else metricFilters[fpCtx.svcId]=arr; render(); }
+  }
+}
+function fpClose(){
+  document.getElementById('fp').style.display='none';
+  fpCtx=null;
+}
+function fpPosition(inp){
+  const panel = document.getElementById('fp');
+  panel.style.display='block';
+  const r = inp.closest('.filterbar,.inner-filterbar').getBoundingClientRect();
+  panel.style.left = r.left+'px';
+  panel.style.top  = (r.bottom+4)+'px';
+  panel.style.width = Math.max(340, r.width)+'px';
+}
+function fpRender(inputVal){
+  const panel = document.getElementById('fp');
+  if(!panel||!fpCtx) return;
+  const q = (inputVal||'').toLowerCase();
+  let html = '';
+
+  if(fpCtx.step==='key'){
+    const matched = FK.filter(k=>!q||k.label.toLowerCase().includes(q)||k.key.includes(q));
+    html += `<div class="fp-section">Key suggestions</div>`;
+    html += matched.map(k=>`<div class="fp-item" onmousedown="fpSelectKey('${k.key}')"><span class="fp-icon">ABC</span>${k.label}<span class="fp-hint">${k.hint}</span></div>`).join('');
+    html += `<hr class="fp-sep">`;
+    html += `<div class="fp-phrase" onmousedown="fpAddFilter(document.getElementById('${fpCtx.inputEl.id}').value)"><svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search for a phrase</div>`;
+  } else if(fpCtx.step==='op'){
+    html += `<div class="fp-breadcrumb"><span class="fp-bc-seg">${fpCtx.pendingKey}</span></div>`;
+    html += `<div class="fp-section">Operator</div>`;
+    html += ['=','!='].map(op=>`<div class="fp-item" onmousedown="fpSelectOp('${op}')"><span class="fp-icon" style="width:24px">${op}</span>${op==='='?'equals':'not equals'}</div>`).join('');
+  } else if(fpCtx.step==='value'){
+    html += `<div class="fp-breadcrumb"><span class="fp-bc-seg">${fpCtx.pendingKey}</span><span class="fp-bc-sep">${fpCtx.pendingOp}</span></div>`;
+    html += `<div class="fp-section">Value</div>`;
+    const fk = FK.find(k=>k.key===fpCtx.pendingKey);
+    const vals = fk ? fk.values(fpCtx.svcId) : [];
+    html += vals.map(v=>`<div class="fp-item" onmousedown="fpSelectValue('${v.replace(/'/g,"\\'")}')"><span class="fp-icon">ABC</span>${v}</div>`).join('');
+  }
+
+  html += `<div class="fp-kbd"><span><kbd>↵</kbd>Apply</span><span><kbd>↑↓</kbd>Navigate</span><span><kbd>esc</kbd>Close</span></div>`;
+  panel.innerHTML = html;
+}
+function fpSelectKey(key){
+  if(!fpCtx) return;
+  clearTimeout(fpBlurTimer);
+  fpCtx.step='op'; fpCtx.pendingKey=key;
+  fpCtx.inputEl.value='';
+  fpRender('');
+  fpCtx.inputEl.focus();
+}
+function fpSelectOp(op){
+  if(!fpCtx) return;
+  clearTimeout(fpBlurTimer);
+  fpCtx.step='value'; fpCtx.pendingOp=op;
+  fpRender('');
+  fpCtx.inputEl.focus();
+}
+function fpSelectValue(value){
+  if(!fpCtx) return;
+  const f = { key:fpCtx.pendingKey, op:fpCtx.pendingOp, value };
+  fpAddFilter(f);
+}
+function fpAddFilter(f){
+  if(!f || (typeof f==='string' && !f.trim())) return;
+  const item = typeof f==='string' ? f.trim() : f;
+  const savedCtx = { ...fpCtx };
+  if(fpCtx.type==='outer'){
+    filters.push(item);
+  } else {
+    if(!metricFilters[fpCtx.svcId]) metricFilters[fpCtx.svcId]=[];
+    metricFilters[fpCtx.svcId].push(item);
+  }
+  fpCtx = { ...savedCtx, step:'key', pendingKey:null, pendingOp:null };
+  render();
+  // re-position after render (input may have moved)
+  setTimeout(()=>{
+    if(!fpCtx) return;
+    const inp = document.getElementById(savedCtx.inputEl.id||'filterInput');
+    if(inp) { fpCtx.inputEl=inp; fpRender(''); fpPosition(inp); }
+  }, 30);
+}
+
+document.getElementById('filterInput').addEventListener('focus', e => fpOpen(e,'outer',null));
+document.getElementById('filterInput').addEventListener('blur', fpBlur);
+document.getElementById('filterInput').addEventListener('input', e => fpInput(e.target.value));
+document.getElementById('filterInput').addEventListener('keydown', e => fpKeydown(e,'outer',null));
 
 function toggleService(id){ const s=services.find(x=>x.id===id); s.open=!s.open; saveState(); render(); }
 function toggleMetric(id,gi){ const s=services.find(x=>x.id===id); if(s.metrics[gi].source==='rec' && s.recOn) return; s.metrics[gi].on=!s.metrics[gi].on; saveState(); render(); }
@@ -574,60 +697,11 @@ function editMetric(svcId, gi) {
   if (newName === null) return;
   if (newName.trim()) { m.m = newName.trim(); saveState(); render(); }
 }
-document.addEventListener('click', closeKebab);
-
-// ── Inner filter suggestions ──────────────────────────────────────────────
-function showInnerSug(id) {
-  const s = services.find(x => x.id === id);
-  const box = document.getElementById('mfsug-' + id);
-  if (!box) return;
-  const cats = [...new Set(visibleMetrics(s).map(m => m.cat).filter(c => c !== '—'))];
-  box.innerHTML = `
-    <div class="sug-label">Type</div>
-    <div class="sug-chips">
-      <span class="sug-chip type-rec-sug" onmousedown="pickInnerSug('${id}','Recommended')">Recommended</span>
-      <span class="sug-chip type-avail-sug" onmousedown="pickInnerSug('${id}','Available')">Available</span>
-      <span class="sug-chip type-custom-sug" onmousedown="pickInnerSug('${id}','Custom')">Custom</span>
-    </div>
-    ${cats.length ? `<div class="sug-label">Category</div><div class="sug-chips">${cats.map(c=>`<span class="sug-chip" onmousedown="pickInnerSug('${id}','${c}')">${c}</span>`).join('')}</div>` : ''}`;
-  box.style.display = 'block';
-}
-function hideInnerSug(id) {
-  const box = document.getElementById('mfsug-' + id);
-  if (box) box.style.display = 'none';
-}
-function pickInnerSug(id, val) {
-  metricFilters[id] = val;
-  render();
-}
-
-// ── Outer filter suggestions ──────────────────────────────────────────────
-function showOuterSug() {
-  const box = document.getElementById('outerSug');
-  if (!box) return;
-  const cats = [...new Set(services.flatMap(s => s.metrics.map(m => m.cat)).filter(c => c !== '—'))];
-  const nss = services.map(s => s.name);
-  box.innerHTML = `
-    <div class="sug-label">Metric type</div>
-    <div class="sug-chips">
-      <span class="sug-chip type-rec-sug" onmousedown="pickOuterSug('Recommended')">Recommended</span>
-      <span class="sug-chip type-avail-sug" onmousedown="pickOuterSug('Available')">Available</span>
-      <span class="sug-chip type-custom-sug" onmousedown="pickOuterSug('Custom')">Custom</span>
-    </div>
-    <div class="sug-label">Category</div>
-    <div class="sug-chips">${cats.map(c=>`<span class="sug-chip" onmousedown="pickOuterSug('${c}')">${c}</span>`).join('')}</div>
-    <div class="sug-label">Service</div>
-    <div class="sug-chips">${nss.map(n=>`<span class="sug-chip" onmousedown="pickOuterSug('${n}')">${n}</span>`).join('')}</div>`;
-  box.style.display = 'block';
-}
-function hideOuterSug() {
-  const box = document.getElementById('outerSug');
-  if (box) box.style.display = 'none';
-}
-function pickOuterSug(val) {
-  filters.push(val); render();
-  const inp = document.getElementById('filterInput'); if (inp) inp.value = '';
-}
+document.addEventListener('click', e => {
+  closeKebab();
+  const panel = document.getElementById('fp');
+  if(panel && panel.style.display!=='none' && fpCtx && !panel.contains(e.target) && !fpCtx.inputEl.contains(e.target)) fpClose();
+});
 
 function toggleModeInfo(e) {
   e.stopPropagation();
@@ -637,6 +711,8 @@ function toggleModeInfo(e) {
 document.addEventListener('click', () => { const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none'; });
 render();
 </script>
+
+<div id="fp" class="fp" style="display:none"></div>
 
 <script type="module">
   import React from 'https://esm.sh/react@18';
