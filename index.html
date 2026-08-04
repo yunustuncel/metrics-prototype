@@ -420,7 +420,6 @@ function render(){
     const tableBlock = `
         <div class="metrics-toolbar">
           <span class="sel-count">${monCount} of ${vis.length} metrics enabled</span>
-          ${isUserDefined ? `<button class="sm" onclick="event.stopPropagation();bulk('${s.id}',true)">Enable</button><button class="sm" onclick="event.stopPropagation();bulk('${s.id}',false)">Disable</button>` : ''}
           <div class="inner-filterbar" onclick="event.stopPropagation()">
             ${mfChipHtml}
             <input id="mf-${s.id}" placeholder="${mfArr.length?'':'Filter metrics…'}" autocomplete="off"
