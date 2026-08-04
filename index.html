@@ -410,8 +410,9 @@ function render(){
 
     const selArr = [...s.sel];
     const selCount = selArr.length;
-    const allSelected = vf.length>0 && vf.every(m=>s.sel.has(s.metrics.indexOf(m)));
     const removable = selCount>0 && selArr.every(gi => s.metrics[gi].source==='custom');
+    const allOn = vf.length>0 && vf.every(m=>m.on);
+    const someOn = vf.some(m=>m.on);
 
     const mfArr = metricFilters[s.id] || [];
     const mfChipHtml = mfArr.map((f,i)=>`<span class="chip">${filterLabel(f)}<span class="x" onclick="event.stopPropagation();removeMetricFilter('${s.id}',${i})">${svg.x}</span></span>`).join('');
@@ -431,7 +432,7 @@ function render(){
           ${!s.recOn ? `<button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>` : ''}
         </div>
         <table class="inner-tbl">
-          <thead><tr><th style="width:34px">${isUserDefined ? `<input type="checkbox" ${allSelected?'checked':''} onclick="event.stopPropagation();selectAll('${s.id}',${!allSelected})" title="Select all">` : ''}</th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th><span class="th-with-info">Ingest activity<span class="info-btn" title="Ingest activity over the last day" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></span></span></th><th style="width:36px"></th></tr></thead>
+          <thead><tr><th style="width:34px">${isUserDefined ? `<input type="checkbox" id="selall-${s.id}" ${allOn?'checked':''} onclick="event.stopPropagation();toggleAllMetrics('${s.id}',this.checked)" title="Select all">` : ''}</th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th><span class="th-with-info">Ingest activity<span class="info-btn" title="Ingest activity over the last day" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></span></span></th><th style="width:36px"></th></tr></thead>
           <tbody>${rows || `<tr><td colspan="9" class="empty">No custom metrics yet. Use "+ Add metric" to add one.</td></tr>`}</tbody>
         </table>
         <div class="foot"><span>50 rows per page</span><span>Page 1 of 1</span></div>`;
@@ -455,14 +456,18 @@ function render(){
         <option value="auto" ${s.autoOn?'selected':''}>Autodiscovery</option>
       </select></td>
       <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${recEnabled}</span><span class="sep">/</span><span class="total">${recTotal}</span></span>`}</td>
-      <td style="text-align:center">${s.autoOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${availEnabled}</span><span class="sep">/</span><span class="total">${availTotal}</span></span>`}</td>
-      <td style="text-align:center"><span class="metric-count"><span class="n grey">${customEnabled}</span><span class="sep">/</span><span class="total">${customTotal}</span></span></td>
+      <td style="text-align:center">${(s.autoOn || s.recOn) ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${availEnabled}</span><span class="sep">/</span><span class="total">${availTotal}</span></span>`}</td>
+      <td style="text-align:center">${s.recOn ? '<span style="color:var(--text-mute)">—</span>' : `<span class="metric-count"><span class="n grey">${customEnabled}</span><span class="sep">/</span><span class="total">${customTotal}</span></span>`}</td>
     </tr>
     <tr class="nested-row ${s.open?'':'collapsed'}">
       <td colspan="5"><div class="detail-inset">${body}</div></td>
     </tr>`;
   }).join('');
   renderFilterChips();
+  services.forEach(s => {
+    const cb = document.getElementById('selall-' + s.id);
+    if (cb) { const vf = visibleFiltered(s); const on = vf.some(m=>m.on); const all = vf.length>0 && vf.every(m=>m.on); cb.indeterminate = on && !all; }
+  });
 }
 
 function renderFilterChips(){
@@ -706,6 +711,12 @@ document.addEventListener('click', e => {
   const panel = document.getElementById('fp');
   if(panel && panel.style.display!=='none' && fpCtx && !panel.contains(e.target) && !fpCtx.inputEl.contains(e.target)) fpClose();
 });
+
+function toggleAllMetrics(id, val) {
+  const s = services.find(x => x.id === id);
+  visibleFiltered(s).forEach(m => { m.on = val; });
+  saveState(); render();
+}
 
 function toggleModeInfo(e) {
   e.stopPropagation();
