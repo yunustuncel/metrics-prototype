@@ -259,7 +259,7 @@ const svg = {
   x: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
 };
 
-const STORAGE_KEY = 'metrics-prototype-state';
+const STORAGE_KEY = 'metrics-prototype-state-v2';
 
 function saveState() {
   const data = services.map(s => ({
@@ -294,11 +294,11 @@ const defaultServices = [
     { m:'instance/network/sent_bytes', cat:'Network', unit:'By', agg:'ALIGN_RATE +2', tag:false, on:true, use:44, source:'rec' },
     { m:'instance/uptime', cat:'Uptime', unit:'s', agg:'ALIGN_DELTA, ALIGN_SUM', tag:true, on:true, use:12, source:'rec' },
     { m:'instance/memory/balloon', cat:'Memory', unit:'By', agg:'ALIGN_MEAN', tag:true, on:false, use:20, source:'disc' },
-    { m:'instance/disk/operation_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:15, source:'disc' },
+    { m:'instance/disk/operation_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:true, on:false, use:15, source:'disc' },
     { m:'firewall/dropped_bytes_count', cat:'Network', unit:'By', agg:'ALIGN_RATE', tag:false, on:false, use:8, source:'disc' },
     { m:'instance/integrity_monitoring/late_boot_report_count', cat:'Security', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:5, source:'avail' },
-    { m:'instance/guest_visible_vcpus', cat:'CPU', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:10, source:'avail' },
-    { m:'instance/network/packet_loss', cat:'Network', unit:'ratio', agg:'ALIGN_MEAN', tag:false, on:false, use:7, source:'avail' },
+    { m:'instance/guest_visible_vcpus', cat:'CPU', unit:'1', agg:'ALIGN_MEAN', tag:true, on:false, use:10, source:'avail' },
+    { m:'instance/network/packet_loss', cat:'Network', unit:'ratio', agg:'ALIGN_MEAN', tag:true, on:false, use:7, source:'avail' },
     { m:'instance/cpu/scheduler_wait_time', cat:'CPU', unit:'ns', agg:'ALIGN_MEAN', tag:false, on:false, use:18, source:'avail' },
     { m:'instance/disk/throttled_bps', cat:'Disk', unit:'By/s', agg:'ALIGN_MEAN', tag:false, on:false, use:9, source:'avail' },
     { m:'instance/memory/page_fault_count', cat:'Memory', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:14, source:'avail' },
@@ -309,11 +309,11 @@ const defaultServices = [
     { m:'database/disk/utilization', cat:'Disk', unit:'ratio', agg:'ALIGN_MEAN', tag:true, on:true, use:40, source:'rec' },
     { m:'database/network/connections', cat:'Network', unit:'1', agg:'ALIGN_MEAN', tag:false, on:true, use:33, source:'rec' },
     { m:'database/uptime', cat:'Uptime', unit:'s', agg:'ALIGN_SUM', tag:true, on:true, use:9, source:'rec' },
-    { m:'database/replication/lag', cat:'Replication', unit:'s', agg:'ALIGN_MEAN', tag:false, on:false, use:11, source:'disc' },
+    { m:'database/replication/lag', cat:'Replication', unit:'s', agg:'ALIGN_MEAN', tag:true, on:false, use:11, source:'disc' },
     { m:'database/disk/read_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:6, source:'disc' },
-    { m:'database/postgresql/num_backends', cat:'Connections', unit:'1', agg:'ALIGN_MEAN', tag:false, on:false, use:14, source:'avail' },
+    { m:'database/postgresql/num_backends', cat:'Connections', unit:'1', agg:'ALIGN_MEAN', tag:true, on:false, use:14, source:'avail' },
     { m:'database/auto_failover/request_count', cat:'Availability', unit:'1', agg:'ALIGN_SUM', tag:false, on:false, use:4, source:'avail' },
-    { m:'database/disk/write_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:false, on:false, use:22, source:'avail' },
+    { m:'database/disk/write_ops_count', cat:'Disk', unit:'1', agg:'ALIGN_RATE', tag:true, on:false, use:22, source:'avail' },
     { m:'database/memory/quota', cat:'Memory', unit:'By', agg:'ALIGN_MEAN', tag:false, on:false, use:31, source:'avail' },
     { m:'database/network/received_bytes_count', cat:'Network', unit:'By', agg:'ALIGN_RATE', tag:false, on:false, use:17, source:'avail' },
   ]}
