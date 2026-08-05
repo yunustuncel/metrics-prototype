@@ -338,7 +338,7 @@ const FK = [
   { key:'unit',            label:'Unit',             hint:'Unit',     values:(sid)=>[...new Set(mPool(sid).map(m=>m.unit).filter(u=>u!=='—'))] },
   { key:'aggregations',    label:'Aggregations',     hint:'Agg',      values:()=>['ALIGN_MEAN','ALIGN_MAX','ALIGN_RATE','ALIGN_SUM','ALIGN_DELTA'] },
   { key:'tag enrichment',  label:'Tag enrichment',   hint:'Tag',      values:()=>['Supported','Not supported'] },
-  { key:'ingest activity', label:'Ingest activity',  hint:'Ingest',   values:()=>['High','Med','Low'] },
+  { key:'ingest estimation', label:'Ingest estimation',  hint:'Ingest',   values:()=>['High','Med','Low'] },
 ];
 function mPool(sid){ return sid ? (services.find(x=>x.id===sid)?.metrics||[]) : services.flatMap(s=>s.metrics); }
 
@@ -351,7 +351,7 @@ function evalFilter(f, m){
   else if(key==='unit')       match = m.unit===value;
   else if(key==='aggregations') match = m.agg.includes(value);
   else if(key==='tag enrichment') match = value==='Supported'?m.tag:!m.tag;
-  else if(key==='ingest activity'){ const lv=m.use>60?'High':m.use>30?'Med':'Low'; match=lv===value; }
+  else if(key==='ingest estimation'){ const lv=m.use>60?'High':m.use>30?'Med':'Low'; match=lv===value; }
   return op==='='?match:!match;
 }
 function filterLabel(f){ return typeof f==='string'?f:`${f.key} ${f.op} ${f.value}`; }
@@ -431,7 +431,7 @@ function render(){
           ${!s.recOn ? `<button class="primary add-btn" onclick="event.stopPropagation();openModal('${s.id}')">+ Add metric</button>` : ''}
         </div>
         <table class="inner-tbl">
-          <thead><tr><th style="width:34px">${isUserDefined ? `<input type="checkbox" id="selall-${s.id}" ${allOn?'checked':''} onclick="event.stopPropagation();toggleAllMetrics('${s.id}',this.checked)" title="Select all">` : ''}</th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th><span class="th-with-info">Ingest activity<span class="info-btn" title="Ingest activity over the last day" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></span></span></th><th style="width:36px"></th></tr></thead>
+          <thead><tr><th style="width:34px">${isUserDefined ? `<input type="checkbox" id="selall-${s.id}" ${allOn?'checked':''} onclick="event.stopPropagation();toggleAllMetrics('${s.id}',this.checked)" title="Select all">` : ''}</th><th>Metric name</th><th>Type</th><th>Category</th><th>Unit</th><th>Aggregations</th><th>Tag enrichment</th><th style="position:relative"><span class="th-with-info">Ingest estimation<button class="info-btn" onclick="toggleIngestInfo(event,'${s.id}')" aria-label="Ingest estimation info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-left:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></button></span><div class="info-popover" id="ingestInfoPopover-${s.id}" style="display:none;top:32px;right:0;left:auto;width:280px;"><h4>Ingest estimation</h4><div style="color:var(--text-dim)">An estimate of how much data this metric is expected to generate, based on its cardinality and collection frequency. Use this to anticipate the impact on your ingest budget before enabling a metric.<br><br><strong style="color:var(--text)">High</strong> — significant data volume, likely high-cardinality or high-frequency<br><strong style="color:var(--text)">Med</strong> — moderate volume, typical for most service metrics<br><strong style="color:var(--text)">Low</strong> — minimal volume, usually low-cardinality or infrequently emitted</div></div></th><th style="width:36px"></th></tr></thead>
           <tbody>${rows || `<tr><td colspan="9" class="empty">No custom metrics yet. Use "+ Add metric" to add one.</td></tr>`}</tbody>
         </table>
         <div class="foot"><span>50 rows per page</span><span>Page 1 of 1</span></div>`;
@@ -722,7 +722,16 @@ function toggleModeInfo(e) {
   const p = document.getElementById('modeInfoPopover');
   p.style.display = p.style.display === 'none' ? 'block' : 'none';
 }
-document.addEventListener('click', () => { const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none'; });
+function toggleIngestInfo(e, svcId) {
+  e.stopPropagation();
+  document.querySelectorAll('[id^="ingestInfoPopover-"]').forEach(p => { if(p.id !== 'ingestInfoPopover-'+svcId) p.style.display='none'; });
+  const p = document.getElementById('ingestInfoPopover-' + svcId);
+  if(p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', () => {
+  const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none';
+  document.querySelectorAll('[id^="ingestInfoPopover-"]').forEach(p => p.style.display='none');
+});
 render();
 
 // Prevent blur when clicking inside the filter panel (keeps input focused through key→op→value flow)
