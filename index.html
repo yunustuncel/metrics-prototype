@@ -116,10 +116,7 @@
   table.inner-tbl thead th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; padding: 9px 15px; border-bottom: 1px solid var(--border); }
   table.inner-tbl tbody td { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: middle; }
   table.inner-tbl tbody tr:last-child td { border-bottom: none; }
-  table.inner-tbl tbody tr { cursor: pointer; }
   table.inner-tbl tbody tr:hover { background: var(--row-hover); }
-  table.inner-tbl tbody tr.selected { background: var(--row-sel); }
-  table.inner-tbl tbody tr.selected:hover { background: #26325a; }
   table.inner-tbl tbody tr.disabled td.dim { opacity: 1; }
   .mname { font-family: var(--mono); font-size: 12px; color: var(--text); }
   .cat { color: var(--text-dim); }
@@ -390,13 +387,12 @@ function render(){
     const vf = visibleFiltered(s);
     const rows = vf.map((m) => {
       const gi = s.metrics.indexOf(m);
-      const isSel = s.sel.has(gi);
       const typeChip = m.source==='rec' ? '<span class="type-chip type-rec">Recommended</span>' : m.source==='avail' ? '<span class="type-chip type-avail">Available</span>' : m.source==='custom' ? '<span class="type-chip type-custom">Custom</span>' : '';
       const recLocked = m.source==='rec' && s.recOn;
       const effectiveOn = recLocked ? true : m.on;
       const rowDisabled = m.source !== 'rec' && !m.on;
-      return `<tr class="${rowDisabled?'disabled':''} ${isSel?'selected':''}" onclick="rowClick(event,'${s.id}',${gi})">
-        <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onclick="event.stopPropagation()" onchange="toggleMetric('${s.id}',${gi})"></td>
+      return `<tr class="${rowDisabled?'disabled':''}">
+        <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onchange="toggleMetric('${s.id}',${gi})"></td>
         <td class="mname dim">${m.m}</td>
         <td>${typeChip}</td>
         <td class="cat dim">${m.cat}</td>
