@@ -160,6 +160,9 @@
   .field input[type=text]:focus, .field select:focus { border-color: var(--accent); }
   .field .hint { font-size: 11px; color: var(--text-mute); margin-top: 5px; }
   .field .hint.ok { color: var(--green-text); } .field .hint.warn { color: #e6c07a; }
+  .field select:disabled, .field input:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+  .field.field-locked > label { opacity: 0.5; }
+  .link-box.locked { opacity: 0.35; pointer-events: none; }
   .ns-back { font-size: 11px; color: var(--accent-text); cursor: pointer; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; }
   .suggest { border: 1px solid var(--border-strong); border-top: none; border-radius: 0 0 6px 6px; background: var(--panel-2); max-height: 150px; overflow-y: auto; }
   .suggest div { padding: 8px 11px; font-family: var(--mono); font-size: 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
@@ -225,15 +228,16 @@
           <option value="pubsub.googleapis.com">
         </datalist>
       </div>
-      <div class="field"><label>Metric name <span class="req">*</span></label>
-        <select id="mName"><option value="" disabled selected>Select a metric…</option></select>
+      <div class="field" id="mNameField">
+        <label>Metric name <span class="req">*</span></label>
+        <div id="mNameWrapper"><select id="mName" disabled><option value="" disabled selected>Select a metric…</option></select></div>
         <div class="hint" id="mHint"></div>
       </div>
-      <div class="field"><label>Aggregations <span class="req">*</span></label>
-        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE">
+      <div class="field field-locked" id="mAggField"><label>Aggregations <span class="req">*</span></label>
+        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE" disabled>
       </div>
-      <div class="field"><label>Labels (dimensions) <span class="req">*</span></label>
-        <select id="mLabels" onchange="updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
+      <div class="field field-locked" id="mLabelsField"><label>Labels (dimensions) <span class="req">*</span></label>
+        <select id="mLabels" disabled onchange="updateLinking(); updateFieldStates();"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
       </div>
       <div class="link-box"><div class="lb-title">Tag enrichment support</div>
         <div id="linkContent" style="color:var(--text-mute);">Add labels above to see matching entity types.</div>
@@ -611,7 +615,7 @@ function setMode(id, mode) {
   render();
 }
 
-function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; } updateMetricDropdown(); updateLinking(); }
+function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; updateMetricDropdown(); } updateLinking(); }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
 function resetModal(){
   document.getElementById('mNs').value='';
@@ -619,16 +623,46 @@ function resetModal(){
   document.getElementById('mAgg').value='';
   document.getElementById('mHint').textContent='';
   document.getElementById('mHint').className='hint';
+  updateMetricDropdown();
   updateLinking();
 }
-const mName = document.getElementById('mName');
 function updateMetricDropdown(){
+  const wrapper = document.getElementById('mNameWrapper');
   const ns = document.getElementById('mNs').value.trim();
-  const pool = ns ? (knownByNs[ns] || []) : Object.values(knownByNs).flat();
-  mName.innerHTML = '<option value="" disabled selected>Select a metric…</option>' +
-    pool.map(m=>`<option value="${m}">${m}</option>`).join('');
+  if (!ns) {
+    wrapper.innerHTML = '<select id="mName" disabled><option value="" disabled selected>Select a metric…</option></select>';
+    document.getElementById('mNameField').classList.add('field-locked');
+  } else if (knownByNs[ns]) {
+    wrapper.innerHTML = '<select id="mName"><option value="" disabled selected>Select a metric…</option>' +
+      knownByNs[ns].map(m=>`<option value="${m}">${m}</option>`).join('') + '</select>';
+    document.getElementById('mNameField').classList.remove('field-locked');
+  } else {
+    wrapper.innerHTML = '<input type="text" id="mName" placeholder="Enter a metric name for this namespace">';
+    document.getElementById('mNameField').classList.remove('field-locked');
+  }
+  document.getElementById('mName').addEventListener('change', updateFieldStates);
+  document.getElementById('mName').addEventListener('input', updateFieldStates);
+  updateFieldStates();
+}
+function updateFieldStates(){
+  const ns = document.getElementById('mNs').value.trim();
+  const metricEl = document.getElementById('mName');
+  const metricVal = metricEl ? metricEl.value.trim() : '';
+  const agg = document.getElementById('mAgg').value.trim();
+  const label = document.getElementById('mLabels').value;
+  const aggEnabled = !!(ns && metricVal);
+  const labelsEnabled = !!(ns && metricVal && agg);
+  const enrichEnabled = !!(ns && metricVal && label);
+  document.getElementById('mAgg').disabled = !aggEnabled;
+  document.getElementById('mAggField').classList.toggle('field-locked', !aggEnabled);
+  document.getElementById('mLabels').disabled = !labelsEnabled;
+  document.getElementById('mLabelsField').classList.toggle('field-locked', !labelsEnabled);
+  const lb = document.querySelector('.link-box');
+  lb.classList.toggle('locked', !enrichEnabled);
+  if (!enrichEnabled) { const lc=document.getElementById('linkContent'); lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; }
 }
 document.getElementById('mNs').addEventListener('input', ()=>{ updateMetricDropdown(); });
+document.getElementById('mAgg').addEventListener('input', updateFieldStates);
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
@@ -636,7 +670,7 @@ function updateLinking(){
   lc.innerHTML='<div class="ent">GCP::Compute::Instance</div><div class="lbls">project_id, instance_id</div><div class="tag-enrich-row"><span class="check-badge">'+svg.check+'</span><span>Tag enrichment supported</span></div>';
 }
 function submitMetric(){
-  const name=mName.value.trim();
+  const name=(document.getElementById('mName')?.value||'').trim();
   if(!name){ document.getElementById('mHint').innerHTML='Enter a metric name to continue.'; document.getElementById('mHint').className='hint warn'; return; }
   const nsName=document.getElementById('mNs').value.trim();
   if(!nsName){ document.getElementById('mNs').focus(); return; }
