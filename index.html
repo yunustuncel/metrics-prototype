@@ -148,7 +148,7 @@
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-start; justify-content: center; padding-top: 70px; z-index: 50; opacity: 0; pointer-events: none; transition: opacity .15s; }
   .modal-overlay.show { opacity: 1; pointer-events: auto; }
-  .modal { width: 460px; max-width: 92vw; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); transform: translateY(-8px); transition: transform .15s; }
+  .modal { width: 768px; max-width: 92vw; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); transform: translateY(-8px); transition: transform .15s; }
   .modal-overlay.show .modal { transform: translateY(0); }
   .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
   .modal-head h2 { margin: 0; font-size: 16px; font-weight: 500; }
@@ -217,7 +217,7 @@
     </div>
     <div class="modal-body">
       <div class="field"><label>Namespace <span class="req">*</span></label>
-        <input type="text" id="mNs" list="mNsList" placeholder="e.g. compute.googleapis.com" autocomplete="off">
+        <input type="text" id="mNs" list="mNsList" placeholder="Select or type a namespace…" autocomplete="off">
         <datalist id="mNsList">
           <option value="compute.googleapis.com">
           <option value="cloudsql.googleapis.com">
@@ -226,9 +226,8 @@
         </datalist>
       </div>
       <div class="field"><label>Metric name <span class="req">*</span></label>
-        <input type="text" id="mName" placeholder="Start typing to search available metrics…" autocomplete="off">
-        <div class="suggest" id="mSuggest" style="display:none;"></div>
-        <div class="hint" id="mHint">Search the validated list, or enter a custom name — we'll verify it exists.</div>
+        <select id="mName"><option value="" disabled selected>Select a metric…</option></select>
+        <div class="hint" id="mHint"></div>
       </div>
       <div class="field"><label>Aggregations <span class="req">*</span></label>
         <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE">
@@ -236,7 +235,7 @@
       <div class="field"><label>Labels (dimensions) <span class="req">*</span></label>
         <select id="mLabels" onchange="updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
       </div>
-      <div class="link-box"><div class="lb-title">Metrics linking</div>
+      <div class="link-box"><div class="lb-title">Tag enrichment support</div>
         <div id="linkContent" style="color:var(--text-mute);">Add labels above to see matching entity types.</div>
       </div>
     </div>
@@ -612,41 +611,24 @@ function setMode(id, mode) {
   render();
 }
 
-function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; } updateMetricSuggestions(); updateLinking(); }
+function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; } updateMetricDropdown(); updateLinking(); }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
 function resetModal(){
-  document.getElementById('mName').value='';
-  document.getElementById('mHint').textContent="Search the validated list, or enter a custom name — we'll verify it exists.";
-  document.getElementById('mHint').className='hint';
-  document.getElementById('mSuggest').style.display='none';
+  document.getElementById('mNs').value='';
   document.getElementById('mLabels').value='';
   document.getElementById('mAgg').value='';
-  document.getElementById('mNs').value='compute.googleapis.com'; updateLinking();
+  document.getElementById('mHint').textContent='';
+  document.getElementById('mHint').className='hint';
+  updateLinking();
 }
 const mName = document.getElementById('mName');
-function updateMetricSuggestions(){
-  const v = mName.value.trim().toLowerCase();
-  const sug = document.getElementById('mSuggest'), hint = document.getElementById('mHint');
+function updateMetricDropdown(){
   const ns = document.getElementById('mNs').value.trim();
-  const pool = knownByNs[ns] || known;
-  const matches = v ? pool.filter(k=>k.includes(v)).slice(0,8) : pool.slice(0,8);
-  if(matches.length){
-    sug.innerHTML = matches.map(m=>`<div onmousedown="pickMetric('${m}')">${m}</div>`).join('');
-    sug.style.display='block';
-    hint.textContent = v ? 'Matches found in the available metrics list.' : 'Available metrics for this namespace.';
-    hint.className='hint';
-  } else {
-    sug.style.display='none';
-    hint.textContent = v ? 'No match — enter the full metric name.' : "Search the validated list, or enter a custom name.";
-    hint.className='hint';
-  }
+  const pool = ns ? (knownByNs[ns] || []) : Object.values(knownByNs).flat();
+  mName.innerHTML = '<option value="" disabled selected>Select a metric…</option>' +
+    pool.map(m=>`<option value="${m}">${m}</option>`).join('');
 }
-mName.addEventListener('input', updateMetricSuggestions);
-document.getElementById('mNs').addEventListener('input', ()=>{ mName.value=''; updateMetricSuggestions(); });
-function pickMetric(m){
-  mName.value=m; document.getElementById('mSuggest').style.display='none';
-  const hint=document.getElementById('mHint'); hint.innerHTML='Verified — this metric exists in the namespace.'; hint.className='hint ok';
-}
+document.getElementById('mNs').addEventListener('input', ()=>{ updateMetricDropdown(); });
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
