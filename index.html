@@ -233,11 +233,11 @@
         <div id="mNameWrapper"><select id="mName" disabled><option value="" disabled selected>Select a metric…</option></select></div>
         <div class="hint" id="mHint"></div>
       </div>
-      <div class="field field-locked" id="mAggField"><label>Aggregations <span class="req">*</span></label>
-        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE" disabled>
+      <div class="field" id="mAggField"><label>Aggregations <span class="req">*</span></label>
+        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE">
       </div>
-      <div class="field field-locked" id="mLabelsField"><label>Labels (dimensions) <span class="req">*</span></label>
-        <select id="mLabels" disabled onchange="updateLinking(); updateFieldStates();"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
+      <div class="field" id="mLabelsField"><label>Labels (dimensions) <span class="req">*</span></label>
+        <select id="mLabels" onchange="updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
       </div>
       <div class="link-box"><div class="lb-title">Tag enrichment support</div>
         <div id="linkContent" style="color:var(--text-mute);">Add labels above to see matching entity types.</div>
@@ -615,10 +615,22 @@ function setMode(id, mode) {
   render();
 }
 
-function openModal(id){ document.getElementById('modal').classList.add('show'); resetModal(); if(id){ const svc=services.find(x=>x.id===id); if(svc) document.getElementById('mNs').value=svc.ns; updateMetricDropdown(); } updateLinking(); }
+function openModal(id){
+  document.getElementById('modal').classList.add('show');
+  resetModal();
+  const nsInput = document.getElementById('mNs');
+  if(id){
+    const svc = services.find(x => x.id === id);
+    if(svc){ nsInput.value = svc.ns; nsInput.disabled = true; }
+    updateMetricDropdown();
+  }
+  updateLinking();
+}
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
 function resetModal(){
-  document.getElementById('mNs').value='';
+  const nsInput = document.getElementById('mNs');
+  nsInput.value = '';
+  nsInput.disabled = false;
   document.getElementById('mLabels').value='';
   document.getElementById('mAgg').value='';
   document.getElementById('mHint').textContent='';
@@ -640,29 +652,8 @@ function updateMetricDropdown(){
     wrapper.innerHTML = '<input type="text" id="mName" placeholder="Enter a metric name for this namespace">';
     document.getElementById('mNameField').classList.remove('field-locked');
   }
-  document.getElementById('mName').addEventListener('change', updateFieldStates);
-  document.getElementById('mName').addEventListener('input', updateFieldStates);
-  updateFieldStates();
-}
-function updateFieldStates(){
-  const ns = document.getElementById('mNs').value.trim();
-  const metricEl = document.getElementById('mName');
-  const metricVal = metricEl ? metricEl.value.trim() : '';
-  const agg = document.getElementById('mAgg').value.trim();
-  const label = document.getElementById('mLabels').value;
-  const aggEnabled = !!(ns && metricVal);
-  const labelsEnabled = !!(ns && metricVal && agg);
-  const enrichEnabled = !!(ns && metricVal && label);
-  document.getElementById('mAgg').disabled = !aggEnabled;
-  document.getElementById('mAggField').classList.toggle('field-locked', !aggEnabled);
-  document.getElementById('mLabels').disabled = !labelsEnabled;
-  document.getElementById('mLabelsField').classList.toggle('field-locked', !labelsEnabled);
-  const lb = document.querySelector('.link-box');
-  lb.classList.toggle('locked', !enrichEnabled);
-  if (!enrichEnabled) { const lc=document.getElementById('linkContent'); lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; }
 }
 document.getElementById('mNs').addEventListener('input', ()=>{ updateMetricDropdown(); });
-document.getElementById('mAgg').addEventListener('input', updateFieldStates);
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
