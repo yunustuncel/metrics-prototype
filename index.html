@@ -159,7 +159,7 @@
   .field input[type=text], .field select { width: 100%; background: var(--panel-2); border: 1px solid var(--border-strong); color: var(--text); border-radius: 6px; padding: 9px 11px; font-size: 13px; font-family: var(--sans); outline: none; }
   .field input[type=text]:focus, .field select:focus { border-color: var(--accent); }
   .field .hint { font-size: 11px; color: var(--text-mute); margin-top: 5px; }
-  .field .hint.ok { color: var(--green-text); } .field .hint.warn { color: #e6c07a; }
+  .field .hint.ok { color: var(--green-text); } .field .hint.warn { color: #e6c07a; } .field .hint.err { color: var(--danger); }
   .field select:disabled, .field input:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
   .field.field-locked > label { opacity: 0.5; }
   .link-box.locked { opacity: 0.35; pointer-events: none; }
@@ -220,13 +220,14 @@
     </div>
     <div class="modal-body">
       <div class="field"><label>Namespace <span class="req">*</span></label>
-        <input type="text" id="mNs" list="mNsList" placeholder="Select or type a namespace…" autocomplete="off">
+        <input type="text" id="mNs" list="mNsList" placeholder="Select or type a namespace…" autocomplete="off" oninput="clearHint('mNsHint')">
         <datalist id="mNsList">
           <option value="compute.googleapis.com">
           <option value="cloudsql.googleapis.com">
           <option value="storage.googleapis.com">
           <option value="pubsub.googleapis.com">
         </datalist>
+        <div class="hint" id="mNsHint"></div>
       </div>
       <div class="field" id="mNameField">
         <label>Metric name <span class="req">*</span></label>
@@ -234,10 +235,12 @@
         <div class="hint" id="mHint"></div>
       </div>
       <div class="field" id="mAggField"><label>Aggregations <span class="req">*</span></label>
-        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE">
+        <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE" oninput="clearHint('mAggHint')">
+        <div class="hint" id="mAggHint"></div>
       </div>
       <div class="field" id="mLabelsField"><label>Labels (dimensions) <span class="req">*</span></label>
-        <select id="mLabels" onchange="updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
+        <select id="mLabels" onchange="clearHint('mLabelsHint'); updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
+        <div class="hint" id="mLabelsHint"></div>
       </div>
       <div class="link-box"><div class="lb-title">Tag enrichment support</div>
         <div id="linkContent" style="color:var(--text-mute);">Add labels above to see matching entity types.</div>
@@ -627,14 +630,15 @@ function openModal(id){
   updateLinking();
 }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function clearHint(id){ const el=document.getElementById(id); if(el){ el.textContent=''; el.className='hint'; } }
+function setErr(id, msg){ const el=document.getElementById(id); if(el){ el.textContent=msg; el.className='hint err'; } }
 function resetModal(){
   const nsInput = document.getElementById('mNs');
   nsInput.value = '';
   nsInput.disabled = false;
   document.getElementById('mLabels').value='';
   document.getElementById('mAgg').value='';
-  document.getElementById('mHint').textContent='';
-  document.getElementById('mHint').className='hint';
+  ['mNsHint','mHint','mAggHint','mLabelsHint'].forEach(clearHint);
   updateMetricDropdown();
   updateLinking();
 }
@@ -652,6 +656,8 @@ function updateMetricDropdown(){
     wrapper.innerHTML = '<input type="text" id="mName" placeholder="Enter a metric name for this namespace">';
     document.getElementById('mNameField').classList.remove('field-locked');
   }
+  const mNameEl = document.getElementById('mName');
+  if(mNameEl){ mNameEl.addEventListener('change', ()=>clearHint('mHint')); mNameEl.addEventListener('input', ()=>clearHint('mHint')); }
 }
 document.getElementById('mNs').addEventListener('input', ()=>{ updateMetricDropdown(); });
 function updateLinking(){
@@ -661,13 +667,19 @@ function updateLinking(){
   lc.innerHTML='<div class="ent">GCP::Compute::Instance</div><div class="lbls">project_id, instance_id</div><div class="tag-enrich-row"><span class="check-badge">'+svg.check+'</span><span>Tag enrichment supported</span></div>';
 }
 function submitMetric(){
-  const name=(document.getElementById('mName')?.value||'').trim();
-  if(!name){ document.getElementById('mHint').innerHTML='Enter a metric name to continue.'; document.getElementById('mHint').className='hint warn'; return; }
-  const nsName=document.getElementById('mNs').value.trim();
-  if(!nsName){ document.getElementById('mNs').focus(); return; }
+  const nsName = document.getElementById('mNs').value.trim();
+  const name = (document.getElementById('mName')?.value||'').trim();
+  const agg = document.getElementById('mAgg').value.trim();
+  const label = document.getElementById('mLabels').value;
+  let valid = true;
+  if(!nsName){ setErr('mNsHint','This field is required'); valid=false; }
+  if(!name){ setErr('mHint','This field is required'); valid=false; }
+  if(!agg){ setErr('mAggHint','This field is required'); valid=false; }
+  if(!label){ setErr('mLabelsHint','This field is required'); valid=false; }
+  if(!valid) return;
   let s=services.find(x=>x.ns===nsName);
   if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
-  s.metrics.push({ m:name, cat:'—', unit:'—', agg:'ALIGN_MEAN', tag:false, on:true, use:5, source:'custom' });
+  s.metrics.push({ m:name, cat:'—', unit:'—', agg, tag:false, on:true, use:5, source:'custom' });
   s.open=true; closeModal(); saveState(); render(); showToast('Custom metric added to ' + s.name);
 }
 function resetState(){ if(confirm('Reset to defaults? All changes will be lost.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
