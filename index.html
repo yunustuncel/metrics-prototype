@@ -630,7 +630,6 @@ function setMode(id, mode) {
     s.metrics.forEach(m => { if(m.source === 'rec') m.on = true; });
   }
   s.sel.clear();
-  if (!s.open) s.open = true;
   saveState();
   render();
 }
