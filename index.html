@@ -167,6 +167,11 @@
   .suggest { border: 1px solid var(--border-strong); border-top: none; border-radius: 0 0 6px 6px; background: var(--panel-2); max-height: 150px; overflow-y: auto; }
   .suggest div { padding: 8px 11px; font-family: var(--mono); font-size: 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
   .suggest div:hover { background: var(--accent-bg); }
+  .ns-field-wrap { position: relative; }
+  .ns-dropdown { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px; z-index: 200; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+  .ns-dropdown div { padding: 9px 11px; font-size: 13px; font-family: var(--mono); cursor: pointer; border-bottom: 1px solid var(--border); }
+  .ns-dropdown div:last-child { border-bottom: none; }
+  .ns-dropdown div:hover { background: var(--accent-bg); color: var(--accent-text); }
   .link-box { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 13px; font-size: 12px; }
   .link-box .lb-title { color: var(--text-dim); margin-bottom: 6px; }
   .link-box .ent { color: var(--accent-text); font-family: var(--mono); font-size: 12px; }
@@ -219,14 +224,18 @@
       <button class="ghost" onclick="closeModal()"><svg class="i" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body">
-      <div class="field"><label>Namespace <span class="req">*</span></label>
-        <input type="text" id="mNs" list="mNsList" placeholder="Select or type a namespace…" autocomplete="off" oninput="clearHint('mNsHint')">
-        <datalist id="mNsList">
-          <option value="compute.googleapis.com">
-          <option value="cloudsql.googleapis.com">
-          <option value="storage.googleapis.com">
-          <option value="pubsub.googleapis.com">
-        </datalist>
+      <div class="field">
+        <label>Namespace <span class="req">*</span></label>
+        <div class="ns-field-wrap">
+          <input type="text" id="mNs" placeholder="Select or type a namespace…" autocomplete="off"
+            onfocus="showNsDropdown()" onblur="scheduleHideNsDropdown()" oninput="clearHint('mNsHint')">
+          <div id="nsDropdown" class="ns-dropdown" style="display:none">
+            <div onmousedown="pickNamespace('compute.googleapis.com')">compute.googleapis.com</div>
+            <div onmousedown="pickNamespace('cloudsql.googleapis.com')">cloudsql.googleapis.com</div>
+            <div onmousedown="pickNamespace('storage.googleapis.com')">storage.googleapis.com</div>
+            <div onmousedown="pickNamespace('pubsub.googleapis.com')">pubsub.googleapis.com</div>
+          </div>
+        </div>
         <div class="hint" id="mNsHint"></div>
       </div>
       <div class="field" id="mNameField">
@@ -660,6 +669,10 @@ function updateMetricDropdown(){
   if(mNameEl){ mNameEl.addEventListener('change', ()=>clearHint('mHint')); mNameEl.addEventListener('input', ()=>clearHint('mHint')); }
 }
 document.getElementById('mNs').addEventListener('input', ()=>{ updateMetricDropdown(); });
+let nsHideTimer;
+function showNsDropdown(){ if(document.getElementById('mNs').disabled) return; clearTimeout(nsHideTimer); document.getElementById('nsDropdown').style.display='block'; }
+function scheduleHideNsDropdown(){ nsHideTimer=setTimeout(()=>{ document.getElementById('nsDropdown').style.display='none'; }, 150); }
+function pickNamespace(ns){ clearTimeout(nsHideTimer); document.getElementById('mNs').value=ns; document.getElementById('nsDropdown').style.display='none'; clearHint('mNsHint'); updateMetricDropdown(); }
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
