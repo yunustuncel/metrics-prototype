@@ -248,7 +248,15 @@
         <div class="hint" id="mAggHint"></div>
       </div>
       <div class="field" id="mLabelsField"><label>Labels (dimensions) <span class="req">*</span></label>
-        <select id="mLabels" onchange="clearHint('mLabelsHint'); updateLinking()"><option value="">Select or type a label…</option><option>project_id</option><option>instance_id</option><option>zone</option></select>
+        <div class="ns-field-wrap">
+          <input type="text" id="mLabels" readonly placeholder="Select or type a label…"
+            onfocus="showLabelsDropdown()" onblur="scheduleHideLabelsDropdown()">
+          <div id="labelsDropdown" class="ns-dropdown" style="display:none">
+            <div onmousedown="pickLabel('project_id')">project_id</div>
+            <div onmousedown="pickLabel('instance_id')">instance_id</div>
+            <div onmousedown="pickLabel('zone')">zone</div>
+          </div>
+        </div>
         <div class="hint" id="mLabelsHint"></div>
       </div>
       <div class="link-box"><div class="lb-title">Tag enrichment support</div>
@@ -655,11 +663,11 @@ function updateMetricDropdown(){
   const wrapper = document.getElementById('mNameWrapper');
   const ns = document.getElementById('mNs').value.trim();
   if (!ns) {
-    wrapper.innerHTML = '<select id="mName" disabled><option value="" disabled selected>Select a metric…</option></select>';
+    wrapper.innerHTML = '<input type="text" id="mName" disabled placeholder="Select a metric…">';
     document.getElementById('mNameField').classList.add('field-locked');
   } else if (knownByNs[ns]) {
-    wrapper.innerHTML = '<select id="mName"><option value="" disabled selected>Select a metric…</option>' +
-      knownByNs[ns].map(m=>`<option value="${m}">${m}</option>`).join('') + '</select>';
+    const opts = knownByNs[ns].map(m=>`<div onmousedown="pickMetricName('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
+    wrapper.innerHTML = `<div class="ns-field-wrap"><input type="text" id="mName" readonly placeholder="Select a metric…" onfocus="showMNameDropdown()" onblur="scheduleHideMNameDropdown()"><div id="mNameDropdown" class="ns-dropdown" style="display:none">${opts}</div></div>`;
     document.getElementById('mNameField').classList.remove('field-locked');
   } else {
     wrapper.innerHTML = '<input type="text" id="mName" placeholder="Enter a metric name for this namespace">';
@@ -673,6 +681,16 @@ let nsHideTimer;
 function showNsDropdown(){ if(document.getElementById('mNs').disabled) return; clearTimeout(nsHideTimer); document.getElementById('nsDropdown').style.display='block'; }
 function scheduleHideNsDropdown(){ nsHideTimer=setTimeout(()=>{ document.getElementById('nsDropdown').style.display='none'; }, 150); }
 function pickNamespace(ns){ clearTimeout(nsHideTimer); document.getElementById('mNs').value=ns; document.getElementById('nsDropdown').style.display='none'; clearHint('mNsHint'); updateMetricDropdown(); }
+
+let mNameHideTimer;
+function showMNameDropdown(){ clearTimeout(mNameHideTimer); const d=document.getElementById('mNameDropdown'); if(d) d.style.display='block'; }
+function scheduleHideMNameDropdown(){ mNameHideTimer=setTimeout(()=>{ const d=document.getElementById('mNameDropdown'); if(d) d.style.display='none'; },150); }
+function pickMetricName(m){ clearTimeout(mNameHideTimer); document.getElementById('mName').value=m; const d=document.getElementById('mNameDropdown'); if(d) d.style.display='none'; clearHint('mHint'); }
+
+let labelsHideTimer;
+function showLabelsDropdown(){ clearTimeout(labelsHideTimer); document.getElementById('labelsDropdown').style.display='block'; }
+function scheduleHideLabelsDropdown(){ labelsHideTimer=setTimeout(()=>{ document.getElementById('labelsDropdown').style.display='none'; },150); }
+function pickLabel(l){ clearTimeout(labelsHideTimer); document.getElementById('mLabels').value=l; document.getElementById('labelsDropdown').style.display='none'; clearHint('mLabelsHint'); updateLinking(); }
 function updateLinking(){
   const val=document.getElementById('mLabels').value, lc=document.getElementById('linkContent');
   if(!val){ lc.style.color='var(--text-mute)'; lc.textContent='Add labels above to see matching entity types.'; return; }
