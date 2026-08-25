@@ -418,8 +418,8 @@ function render(){
         <td style="width:34px"><input type="checkbox" ${effectiveOn?'checked':''} ${recLocked?'disabled':''} onchange="toggleMetric('${s.id}',${gi})"></td>
         <td class="mname dim" title="${m.m}">${m.m}</td>
         <td>${typeChip}</td>
-        <td class="cat dim">${m.cat}</td>
-        <td class="dim">${m.unit}</td>
+        <td class="cat dim">${m.cat==='—'?'<span style="color:var(--text-mute)">—</span>':m.cat}</td>
+        <td class="dim">${m.unit==='—'?'<span style="color:var(--text-mute)">—</span>':m.unit}</td>
         <td class="aggs dim">${m.agg}</td>
         <td class="dim">${m.tag ? '<span class="tagged"><span class="check-badge">'+svg.check+'</span> Supported</span>' : '<span style="color:var(--text-mute)">—</span>'}</td>
         <td class="dim">${m.source==='custom'?'<span style="color:var(--text-mute)">—</span>':`${m.use>60?'High':m.use>30?'Medium':'Low'}`}</td>
