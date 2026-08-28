@@ -243,6 +243,10 @@
         <div id="mNameWrapper"><select id="mName" disabled><option value="" disabled selected>Select a metric…</option></select></div>
         <div class="hint" id="mHint"></div>
       </div>
+      <div class="field" id="mUnitField"><label>Unit <span class="req">*</span></label>
+        <input type="text" id="mUnit" placeholder="e.g. By, ratio, 1, s, ms" oninput="clearHint('mUnitHint')">
+        <div class="hint" id="mUnitHint"></div>
+      </div>
       <div class="field" id="mAggField"><label>Aggregations <span class="req">*</span></label>
         <input type="text" id="mAgg" placeholder="e.g. ALIGN_MEAN, ALIGN_RATE" oninput="clearHint('mAggHint')">
         <div class="hint" id="mAggHint"></div>
@@ -654,7 +658,8 @@ function resetModal(){
   nsInput.disabled = false;
   document.getElementById('mLabels').value='';
   document.getElementById('mAgg').value='';
-  ['mNsHint','mHint','mAggHint','mLabelsHint'].forEach(clearHint);
+  document.getElementById('mUnit').value='';
+  ['mNsHint','mHint','mUnitHint','mAggHint','mLabelsHint'].forEach(clearHint);
   updateMetricDropdown();
   updateLinking();
 }
@@ -699,17 +704,19 @@ function updateLinking(){
 function submitMetric(){
   const nsName = document.getElementById('mNs').value.trim();
   const name = (document.getElementById('mName')?.value||'').trim();
+  const unit = document.getElementById('mUnit').value.trim();
   const agg = document.getElementById('mAgg').value.trim();
   const label = document.getElementById('mLabels').value;
   let valid = true;
   if(!nsName){ setErr('mNsHint','This field is required'); valid=false; }
   if(!name){ setErr('mHint','This field is required'); valid=false; }
+  if(!unit){ setErr('mUnitHint','This field is required'); valid=false; }
   if(!agg){ setErr('mAggHint','This field is required'); valid=false; }
   if(!label){ setErr('mLabelsHint','This field is required'); valid=false; }
   if(!valid) return;
   let s=services.find(x=>x.ns===nsName);
   if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
-  s.metrics.push({ m:name, cat:'—', unit:'—', agg, tag:false, on:true, use:5, source:'custom' });
+  s.metrics.push({ m:name, cat:'—', unit, agg, tag:false, on:true, use:5, source:'custom' });
   s.open=true; closeModal(); saveState(); render(); showToast('Custom metric added to ' + s.name);
 }
 function resetState(){ if(confirm('Reset to defaults? All changes will be lost.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
