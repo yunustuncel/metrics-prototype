@@ -46,7 +46,7 @@
   .info-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--text-mute); display: inline-flex; align-items: center; line-height: 1; }
   .info-btn:hover { color: var(--text-dim); background: none; }
   .info-btn svg { width: 13px; height: 13px; }
-  .info-popover { position: absolute; z-index: 200; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px 16px; width: 310px; box-shadow: 0 8px 24px rgba(0,0,0,.45); font-size: 12px; line-height: 1.6; }
+  .info-popover { position: absolute; z-index: 200; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px 16px; width: 310px; box-shadow: 0 8px 24px rgba(0,0,0,.45); font-size: 12px; line-height: 1.6; text-align: left; }
   .info-popover h4 { margin: 0 0 10px; font-size: 12px; color: var(--text-dim); letter-spacing: 0; font-weight: 600; }
   .info-popover .mode-row { margin-bottom: 10px; }
   .info-popover .mode-row:last-child { margin-bottom: 0; }
@@ -212,7 +212,19 @@
           <div class="mode-row"><div class="mode-name">User-defined</div><div class="mode-desc">Start from recommended metrics and customize — toggle, add, or remove as needed.</div></div>
           <div class="mode-row"><div class="mode-name">Autodiscovery</div><div class="mode-desc">Ingests all discovered metrics automatically. Best for full coverage.</div></div>
         </div>
-      </th><th class="center">Recommended</th><th class="center">Available</th><th class="center">Custom</th>
+      </th>
+      <th class="center" style="position:relative">
+        <span class="th-with-info" style="justify-content:center">Recommended<button class="info-btn" onclick="toggleColInfo(event,'recColInfo')" aria-label="Recommended info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></button></span>
+        <div class="info-popover col-info-popover" id="recColInfo" style="display:none;top:40px;right:0;left:auto;width:240px;"><h4>Recommended</h4><div style="color:var(--text-dim)">Curated high-value metrics selected by Dynatrace. Auto-enabled and locked in Recommended mode.</div></div>
+      </th>
+      <th class="center" style="position:relative">
+        <span class="th-with-info" style="justify-content:center">Available<button class="info-btn" onclick="toggleColInfo(event,'availColInfo')" aria-label="Available info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></button></span>
+        <div class="info-popover col-info-popover" id="availColInfo" style="display:none;top:40px;right:0;left:auto;width:240px;"><h4>Available</h4><div style="color:var(--text-dim)">Optional metrics available for your namespace. Visible and toggleable in User-defined mode.</div></div>
+      </th>
+      <th class="center" style="position:relative">
+        <span class="th-with-info" style="justify-content:center">Custom<button class="info-btn" onclick="toggleColInfo(event,'customColInfo')" aria-label="Custom info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke-linecap="round"/></svg></button></span>
+        <div class="info-popover col-info-popover" id="customColInfo" style="display:none;top:40px;right:0;left:auto;width:240px;"><h4>Custom</h4><div style="color:var(--text-dim)">Metrics added manually via '+ Add metric'. Always editable regardless of the collection mode.</div></div>
+      </th>
     </tr></thead>
     <tbody id="services"></tbody>
   </table>
@@ -716,7 +728,7 @@ function submitMetric(){
   if(!valid) return;
   let s=services.find(x=>x.ns===nsName);
   if(!s){ s={ id:'ns'+Date.now(), name:nsName.split('.')[0].replace(/^\w/,c=>c.toUpperCase()), ns:nsName, open:true, recOn:false, autoOn:false, sel:new Set(), metrics:[] }; services.push(s); }
-  s.metrics.push({ m:name, cat:'—', unit, agg, tag:false, on:true, use:5, source:'custom' });
+  s.metrics.push({ m:name, cat:'—', unit, agg, tag:!!label, on:true, use:5, source:'custom' });
   s.open=true; closeModal(); saveState(); render(); showToast('Custom metric added to ' + s.name);
 }
 function resetState(){ if(confirm('Reset to defaults? All changes will be lost.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
@@ -771,8 +783,17 @@ function toggleAllMetrics(id, val) {
 
 function toggleModeInfo(e) {
   e.stopPropagation();
+  document.querySelectorAll('.col-info-popover').forEach(p => p.style.display='none');
   const p = document.getElementById('modeInfoPopover');
   p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function toggleColInfo(e, id) {
+  e.stopPropagation();
+  const wasOpen = document.getElementById(id)?.style.display !== 'none';
+  document.getElementById('modeInfoPopover').style.display = 'none';
+  document.querySelectorAll('.col-info-popover').forEach(p => p.style.display='none');
+  document.querySelectorAll('[id^="ingestInfoPopover-"]').forEach(p => p.style.display='none');
+  if (!wasOpen) { const p = document.getElementById(id); if(p) p.style.display = 'block'; }
 }
 function toggleIngestInfo(e, svcId) {
   e.stopPropagation();
@@ -782,6 +803,7 @@ function toggleIngestInfo(e, svcId) {
 }
 document.addEventListener('click', () => {
   const p = document.getElementById('modeInfoPopover'); if(p) p.style.display='none';
+  document.querySelectorAll('.col-info-popover').forEach(p => p.style.display='none');
   document.querySelectorAll('[id^="ingestInfoPopover-"]').forEach(p => p.style.display='none');
 });
 render();
